@@ -8,12 +8,13 @@ import {
   // FlatList
 } from "react-native";
 import { TouchableOpacity, FlatList } from "react-native-gesture-handler";
-import BottomSheet from "reanimated-bottom-sheet";
 import { data } from "./data";
+// import Notification from "./src/components/Notification";
+import Notification from "./src/components/Notification";
 const { width: wWidth, height: wHeight } = Dimensions.get("window");
-import ShadowModal from "./src/components/ShadowModal";
 export default function App() {
-  const [modalVisible, setModalVisible] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [dragged, setDragged] = useState(false);
   // const clock = new Clock(/)
   return (
     <View style={styles.container}>
@@ -24,15 +25,13 @@ export default function App() {
           paddingVertical: 16
         }}
         onPress={() => {
-          setModalVisible(true);
+          setModalVisible(!modalVisible);
           // modal.current.snapTo(1);
         }}
       >
-        <Text>Oen modal</Text>
+        <Text>SHow notification</Text>
       </TouchableOpacity>
-      {modalVisible === true ? (
-        <ShadowModal visible={modalVisible} setModalVisible={setModalVisible} />
-      ) : null}
+      <Notification show={modalVisible} setModalVisible={setModalVisible} />
     </View>
   );
 }
