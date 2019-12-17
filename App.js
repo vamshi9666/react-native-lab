@@ -17,22 +17,7 @@ export default function App() {
   // const clock = new Clock(/)
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={{
-          backgroundColor: "white",
-          paddingHorizontal: 16,
-          paddingVertical: 16
-        }}
-        onPress={() => {
-          setModalVisible(true);
-          // modal.current.snapTo(1);
-        }}
-      >
-        <Text>Oen modal</Text>
-      </TouchableOpacity>
-      {modalVisible === true ? (
-        <ShadowModal visible={modalVisible} setModalVisible={setModalVisible} />
-      ) : null}
+      <ShadowModal visible={modalVisible} setModalVisible={setModalVisible} />
     </View>
   );
 }
