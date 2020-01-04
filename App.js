@@ -1,76 +1,143 @@
-import React, { createRef, Component, useState } from "react";
+import React, { Component, PropTypes } from "react";
+// import { Transitioner } from "react-navigation-transitioner";
 import {
-  View,
-  Text,
+  Animated,
+  Easing,
+  Image,
+  Platform,
+  StatusBar,
   StyleSheet,
-  FlatList,
-  TouchableWithoutFeedback
+  View,
+  Dimensions,
+  Button,
+  Text as SampleText
 } from "react-native";
-import Card from "./src/components/Card";
+import {
+  // Transitioner,
+  SafeAreaView,
+  StackRouter,
+  createNavigationContainer,
+  createNavigator,
+  createAppContainer
+} from "react-navigation";
+import { Transitioner } from "react-navigation-stack";
 
-import ModalContext from "./src/context/ModalContext";
-const ModalRoot = props => {
-  const [component, setComponent] = useState(null);
+const { width: sWidth } = Dimensions.get("window");
+// import SampleText from './SampleText';
+// import { Button } from './commonComponents/ButtonWithMargin';
 
-  const [_props, set_props] = useState({});
-  const openModal = (component, props = {}) => {
-    setComponent(component);
-    set_props(props);
-  };
-  const closeModal = () => {
-    setComponent(null);
-    set_props({});
-  };
-  return (
-    <ModalContext.Provider
-      value={{ component, props: _props, openModal, closeModal }}
-    >
-      {props.children}
-    </ModalContext.Provider>
-  );
-};
+const MyNavScreen = ({ navigation, banner }) => (
+  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <SafeAreaView forceInset={{ top: "always" }}>
+      <SampleText>{banner}</SampleText>
+      {navigation.state && navigation.state.routeName !== "Settings" && (
+        <Button
+          onPress={() => navigation.navigate("Settings")}
+          title="Go to a settings screen"
+        />
+      )}
 
-export default class App extends Component {
-  open = (position, index, ...rest) => {
-    console.log(position, index);
-    this.setState({
-      postion,
-      index
-    });
-  };
+      <Button onPress={() => navigation.goBack(null)} title="Go back" />
+      <StatusBar barStyle="default" />
+    </SafeAreaView>
+  </View>
+);
 
-  renderItem = ({ item, index }) => {
-    return <ListItem {...{ open: this.open, index }} />;
-  };
+const ProfileScreen = ({ navigation }) => (
+  <MyNavScreen banner={"profile screen "} navigation={navigation} />
+);
+const MyHomeScreen = ({ navigation }) => (
+  <MyNavScreen banner="Home Screen" navigation={navigation} />
+);
+
+const MySettingsScreen = ({ navigation }) => (
+  <MyNavScreen banner="Settings Screen" navigation={navigation} />
+);
+
+class CustomNavigationView extends Component {
   render() {
-    // const { postion, index } = this.state;
+    const { navigation, router, descriptors } = this.props;
+
     return (
-      <ModalRoot>
-        <View style={styles.container}>
-          <Card />
-        </View>
-      </ModalRoot>
+      <>
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            width: sWidth,
+            height: 100,
+            backgroundColor: "red"
+          }}
+        ></View>
+        <Transitioner
+          configureTransition={this._configureTransition}
+          descriptors={descriptors}
+          navigation={navigation}
+          render={this._render}
+        />
+      </>
     );
   }
+
+  _configureTransition(transitionProps, prevTransitionProps) {
+    return {
+      duration: 200,
+      easing: Easing.out(Easing.ease)
+    };
+  }
+
+  _render = (transitionProps, prevTransitionProps) => {
+    console.log(" new one are ", transitionProps.scenes.length);
+    // console.log("old one are ", prevTransitionProps.scenes.length);
+    const scenes = transitionProps.scenes.map(scene =>
+      this._renderScene(transitionProps, scene)
+    );
+    return <View style={{ flex: 1 }}>{scenes}</View>;
+  };
+
+  _renderScene = (transitionProps, scene) => {
+    const { navigation, router } = this.props;
+    const { routes } = navigation.state;
+    const { position } = transitionProps;
+    const { index } = scene;
+    // console.log(" scene index is ", index);
+    const animatedValue = position.interpolate({
+      inputRange: [index - 1, index, index + 1],
+      outputRange: [0, 1, 0]
+    });
+
+    const animation = {
+      opacity: animatedValue,
+      transform: [{ scale: animatedValue }]
+    };
+
+    const Scene = scene.descriptor.getComponent();
+    return (
+      <Animated.View key={index} style={[styles.view, animation]}>
+        <Scene navigation={scene.descriptor.navigation} />
+      </Animated.View>
+    );
+  };
 }
 
+const CustomRouter = StackRouter({
+  Home: { screen: MyHomeScreen },
+  Settings: { screen: MySettingsScreen },
+  Profile: { screen: ProfileScreen }
+});
+
+const CustomTransitioner = createAppContainer(
+  createNavigator(CustomNavigationView, CustomRouter, {})
+);
+
+export default CustomTransitioner;
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  listItme: {
-    // padding: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 10,
-    marginHorizontal: 10
-  },
-  listItemText: {
-    marginVertical: 46,
-    fontSize: 20,
-    textAlign: "center",
-    padding: 8
+  view: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0
   }
 });
