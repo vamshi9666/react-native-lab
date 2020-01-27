@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "lab_rat",
-    "slug": "lab_rat",
+    "name": "reanimated-stack",
+    "slug": "vamshi-reanimated",
     "privacy": "public",
-    "sdkVersion": "35.0.0",
+    "sdkVersion": "36.0.0",
     "platforms": [
       "ios",
       "android",
