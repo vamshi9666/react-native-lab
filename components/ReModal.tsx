@@ -21,6 +21,7 @@ const {
 } = Animated;
 
 function runTiming({ clock, value, dest }) {
+  // const clock = new Clock();
   const state = {
     finished: new Value(0),
     position: new Value(0),
@@ -29,7 +30,8 @@ function runTiming({ clock, value, dest }) {
   };
 
   const config = {
-    duration: 500,
+    duration: 350,
+
     toValue: new Value(0),
     easing: Easing.inOut(Easing.ease)
   };
@@ -48,13 +50,23 @@ function runTiming({ clock, value, dest }) {
       ]
     ),
     timing(clock, state, config),
-    cond(state.finished, debug("stop clock", stopClock(clock))),
+    cond(state.finished, stopClock(clock)),
     state.position
   ]);
 }
+
+enum Effect {
+  SLIDE_FROM_BOTTOM = 1,
+  SLIDE_FROM_TOP = 2,
+  SLIDE_FROM_LEFT = 3,
+  SLIDE_FROM_RIGHT = 4
+}
 interface IProps {
   visible: Boolean;
-  callbackNode: Animated.Adaptable<Numer>;
+  callbackNode: Animated.Adaptable<Number>;
+  fromDirection?: String;
+  showModal: Animated.Adaptable<Number>;
+  effect: Effect;
 }
 interface IState {}
 class ReanimatedModal extends Component<IProps, IState> {
@@ -62,72 +74,91 @@ class ReanimatedModal extends Component<IProps, IState> {
     super(props);
     this.state = {};
     this.modalTranslateY = new Value(height);
-    this.showModal = new Value(0);
+    this.progress = new Value(0);
+    this.shadowOpacity = new Value(0);
+    this.fromCoordinate = new Value();
+    // this.toCoordinate = new Value();
+    this.toCoordinate = new Value(0);
+    if (props.effect === 1) {
+      this.fromCoordinate = new Value(height);
+      this.modalTranslateY = new Value(height);
+    } else if (props.effect === 2) {
+      this.fromCoordinate = new Value(-height);
+      this.modalTranslateY = new Value(-height);
+      // this.toCoordinate = new Value(0);
+    }
+
     this.clock = new Clock();
   }
-  componentWillReceiveProps = nextProps => {
-    if (nextProps.visible !== this.props.visible) {
-      console.log(" to bal", nextProps.visile ? 1 : 0);
-      this.showModal.setValue(nextProps.visible ? 1 : 2);
-    }
-  };
 
   render() {
+    const { showModal, effect } = this.props;
     return (
       <>
         <Animated.Code>
           {() =>
             block([
-              // debug("callback node is ", this.props.callBackNode),
+              // debug("callback node is ", showModal),
               // onChange(
               // this.modalTranslateY,
               set(
                 this.props.callbackNode,
                 interpolate(this.modalTranslateY, {
-                  inputRange: [0, height],
+                  inputRange: [this.fromCoordinate, this.toCoordinate],
+                  outputRange: [1, 0],
+                  expextrapolate: Extrapolate.CLAMP
+                })
+                // )
+              ),
+              set(
+                this.shadowOpacity,
+                interpolate(this.modalTranslateY, {
+                  inputRange: [this.fromCoordinate, this.toCoordinate],
                   outputRange: [0, 1],
                   expextrapolate: Extrapolate.CLAMP
                 })
                 // )
               ),
-              cond(eq(this.showModal, 1), [
+              cond(eq(showModal, 1), [
                 set(
                   this.modalTranslateY,
                   runTiming({
                     clock: this.clock,
                     value: this.modalTranslateY,
-                    dest: new Value(0)
+                    dest: this.toCoordinate
                   })
                 )
               ]),
-              cond(eq(this.showModal, 2), [
+              cond(eq(showModal, 2), [
                 set(
                   this.modalTranslateY,
                   runTiming({
                     clock: this.clock,
                     value: this.modalTranslateY,
-                    dest: new Value(height)
+                    dest: this.fromCoordinate
                   })
                 )
-              ]),
-              debug("show this ", this.props.callbackNode)
+              ])
             ])
           }
         </Animated.Code>
-        {/*<Animated.View
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              backgroundColor:"#000",
-              opacity: this.modalTranslateY
-            }}
-
+        <Animated.View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: "#000",
+            opacity: this.shadowOpacity
+          }}
         />
-*/}
 
         <Animated.View
           style={{
             ...styles.container,
-            transform: [{ translateY: this.modalTranslateY }]
+            transform: [
+              { translateY: this.modalTranslateY }
+              // {
+              //   translateY: this.fromCoordinate
+              // }
+            ]
           }}
         ></Animated.View>
       </>

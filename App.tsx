@@ -10,21 +10,22 @@ export default class App extends React.Component {
   state = {
     modalVisible: false
   };
+  modalVisible = new Value(0);
   progress = new Value(0);
   render() {
-    const { modalVisible } = this.state;
+    const { modalVisible } = this;
+    // const { modalVisible } = this.state;
     const { progress } = this;
     return (
       <View style={styles.container}>
-        <Animated.Code>
-          {() =>
-            block([
-              cond(eq(new Value(1), 1), [debug("parent value is ", progress)])
-            ])
-          }
-        </Animated.Code>
-        <ReModal callbackNode={progress} visible={modalVisible}></ReModal>
-        <Animated.View
+        <ReModal
+          effect={2}
+          showModal={modalVisible}
+          callbackNode={progress}
+          visible={modalVisible}
+        ></ReModal>
+
+        {/*<Animated.View
           pointerEvents={"none"}
           style={{
             zIndex: -1,
@@ -39,12 +40,14 @@ export default class App extends React.Component {
               extrapolate: Extrapolate.CLAMP
             })
           }}
-        />
+        />*/}
         <Button
           title={"open"}
           onPress={() => {
+            this.modalVisible.setValue(cond(eq(this.modalVisible, 1), 2, 1));
             // alert(" one");
-            this.setState({ modalVisible: !modalVisible });
+
+            // this.setState({ modalVisible: !modalVisible });
           }}
         />
       </View>
