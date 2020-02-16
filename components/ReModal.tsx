@@ -20,7 +20,13 @@ const {
   Extrapolate
 } = Animated;
 
-function runTiming({ clock, value, dest }) {
+interface runTimingProps {
+  clock: Animated.Clock;
+  value: Animated.Adaptable<number>;
+  dest: number;
+  oppositeClock: Animated.Clock;
+}
+function runTiming({ clock, value, dest, oppositeClock }: runTimingProps) {
   // const clock = new Clock();
   const state = {
     finished: new Value(0),
@@ -37,6 +43,7 @@ function runTiming({ clock, value, dest }) {
   };
 
   return block([
+    cond(clockRunning(oppositeClock), stopClock(oppositeClock), 0),
     cond(
       clockRunning(clock),
       [set(config.toValue, dest)],
