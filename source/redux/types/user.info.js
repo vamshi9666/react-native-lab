@@ -1,0 +1,12 @@
+export const ADD_INFO = "ADD_INFO";
+export const DELETE_INFO = "DELETE_INFO";
+export const INIT_DUMP = "INIT_DUMP";
+export const SET_POSTS = "SET_POSTS";
+export const UPDATE_OWN_PROFILE = "UPDATE_OWN_PROFILE";
+export const SET_REASONS = "SET_REASONS";
+export const INCRIMENT_IMAGE_CHAGNED = "INCRIMENT_IMAGE_CHAGNED";
+export const SET_ALL_GAME_POSTS = "SET_ALL_GAME_POSTS";
+export const SET_ONE_GAME_POSTS = "SET_ONE_GAME_POSTS";
+export const SET_INSTA_PHOTOS = "SET_INSTA_PHOTOS";
+export const SET_AUTH_TOKEN = "SET_AUTH_TOKEN";
+export const SET_POSTS_ORDER = "SET_POSTS_ORDER";

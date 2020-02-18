@@ -1,0 +1,5 @@
+export const SET_CHAT_ICON_DOT = "SET_CHAT_ICON_DOT";
+export const SET_CHAT_TEXT_DOT = "SET_CHAT_TEXT_DOT";
+export const SET_SENT_TEXT_DOT = "SET_SENT_TEXT_DOT";
+export const SET_RECEIVED_DOT = "SET_RECEIVED_DOT";
+export const SET_BELL_ICON_DOT = "SET_BELL_ICON_DOT";

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { StyleSheet, Text, View, Button, Dimensions } from "react-native";
 import ReModal from "./components/ReModal";
 import Animated from "react-native-reanimated";
+import ReCaurosel from "./components/ReCaurosel";
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
 
 const { height } = Dimensions.get("window");
@@ -10,6 +11,7 @@ export default class App extends React.Component {
   state = {
     modalVisible: false
   };
+  masterTranslateX = new Value(0);
   modalVisible = new Value(0);
   progress = new Value(0);
   render() {
@@ -18,37 +20,20 @@ export default class App extends React.Component {
     const { progress } = this;
     return (
       <View style={styles.container}>
-        <ReModal
-          effect={2}
-          showModal={modalVisible}
-          callbackNode={progress}
-          visible={modalVisible}
-        ></ReModal>
-
-        {/*<Animated.View
-          pointerEvents={"none"}
-          style={{
-            zIndex: -1,
-            backgroundColor: "#000",
-            ...StyleSheet.absoluteFillObject,
-
-            // width: 100,
-            // height: 100,
-            opacity: interpolate(progress, {
-              inputRange: [0, 1],
-              outputRange: [0.8, 0],
-              extrapolate: Extrapolate.CLAMP
-            })
+        <ReCaurosel
+          data={new Array(20).fill(1)}
+          onItemSnapped={(index, direction) => {
+            console.log(" snapped to ", index, direction);
           }}
-        />*/}
-        <Button
-          title={"open"}
-          onPress={() => {
-            this.modalVisible.setValue(cond(eq(this.modalVisible, 1), 2, 1));
-            // alert(" one");
-
-            // this.setState({ modalVisible: !modalVisible });
-          }}
+          renderItem={(_, itemIndex) => (
+            <View
+              style={{
+                width: 250,
+                height: height * 0.8,
+                backgroundColor: "red"
+              }}
+            />
+          )}
         />
       </View>
     );
@@ -62,5 +47,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     paddingBottom: 50
+  },
+  scrollContainer: {
+    flexDirection: "row",
+    alignItems: "center"
   }
 });
