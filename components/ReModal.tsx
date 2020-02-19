@@ -77,6 +77,7 @@ interface IProps {
 }
 interface IState {}
 class ReanimatedModal extends Component<IProps, IState> {
+  private modalTranslateY: any;
   constructor(props) {
     super(props);
     this.state = {};

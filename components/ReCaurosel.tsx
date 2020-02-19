@@ -1,5 +1,5 @@
 import * as React from "react";
-import { StyleProp, Dimensions, View, Text } from "react-native";
+import { StyleSheet, Dimensions, View, Text, Alert } from "react-native";
 import A, { Easing } from "react-native-reanimated";
 import { ReText } from "react-native-redash";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
@@ -33,6 +33,7 @@ const {
 const { width, height } = Dimensions.get("window");
 interface IState {
   currentProfileIndex: number;
+  availablePrevCard: number;
 }
 function runTiming({ clock, value, dest, safeX, animState, onComplete }) {
   const state = {
@@ -87,8 +88,9 @@ const arr = new Array(100).fill(0);
 const ANIM_STATES = {
   N0_ANIMATION: 0,
   MOVE_FORWARD: 1,
-  GO_TO_SAFE: 2,
-  MOVE_BACKWARD: 3
+  MOVE_SAFE: 2,
+  MOVE_BACKWARD: 3,
+  MOVE_SAFE_WITH_CALLBACK: 4
 };
 class ReCaurosel extends React.Component<IProps, IState> {
   static defaultProps = {
@@ -98,7 +100,7 @@ class ReCaurosel extends React.Component<IProps, IState> {
   private masterTranslateX: any;
   private gestureEvent: any;
   private safeX: any;
-  private animState: any;
+  private animState: A.Value<number>;
   private panState: any;
   private dragX: any;
   private clock: any;
@@ -109,7 +111,8 @@ class ReCaurosel extends React.Component<IProps, IState> {
   constructor(props) {
     super(props);
     this.state = {
-      currentProfileIndex: 0
+      currentProfileIndex: 0,
+      availablePrevCard: -1
     };
     this.initialPostion = new Value(0);
     this.safeX = new Value(0);
@@ -133,6 +136,20 @@ class ReCaurosel extends React.Component<IProps, IState> {
     this.backwardClock = new Clock();
   }
 
+  componentDidUpdate = (prevProps: IProps, prevState: IState, _) => {
+    if (prevState.currentProfileIndex !== this.state.currentProfileIndex) {
+      this.setState(prevState => {
+        const availablePrevCard =
+          prevState.currentProfileIndex > 2
+            ? prevState.currentProfileIndex - 2
+            : -1;
+        return {
+          availablePrevCard
+        };
+      });
+    }
+  };
+
   renderCode = () => {
     const nextTransX = sub(this.safeX, width);
     const prevTrans = add(this.safeX, width);
@@ -152,11 +169,12 @@ class ReCaurosel extends React.Component<IProps, IState> {
                 [
                   cond(
                     greaterThan(this.dragX, 100),
-                    [set(this.animState, ANIM_STATES.MOVE_BACKWARD)],
-                    [set(this.animState, ANIM_STATES.GO_TO_SAFE)]
+                    [set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)],
+                    [set(this.animState, ANIM_STATES.MOVE_SAFE)]
                   )
                 ]
-              )
+              ),
+              set(this.panState, State.UNDETERMINED)
             ]),
             cond(eq(this.animState, ANIM_STATES.MOVE_FORWARD), [
               set(
@@ -194,7 +212,7 @@ class ReCaurosel extends React.Component<IProps, IState> {
                 })
               )
             ]),
-            cond(eq(this.animState, ANIM_STATES.GO_TO_SAFE), [
+            cond(eq(this.animState, ANIM_STATES.MOVE_SAFE), [
               set(
                 this.masterTranslateX,
                 runTiming({
@@ -204,6 +222,43 @@ class ReCaurosel extends React.Component<IProps, IState> {
                   dest: this.safeX,
                   safeX: this.safeX,
                   onComplete: () => ({})
+                })
+              )
+            ]),
+            cond(eq(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK), [
+              set(
+                this.masterTranslateX,
+                runTiming({
+                  clock: this.backwardClock,
+                  animState: this.animState,
+                  value: this.masterTranslateX,
+                  dest: this.safeX,
+                  safeX: this.safeX,
+                  onComplete: () => {
+                    if (this.state.availablePrevCard === -1 && false) {
+                      alert(" not available ");
+                    } else if (this.state.availablePrevCard % 2 === 0 || true) {
+                      Alert.alert(" go to -2", "just do it", [
+                        {
+                          text: "yes",
+                          onPress: () => {
+                            this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
+                          }
+                        },
+                        {
+                          text: "no",
+                          onPress: () => {
+                            // this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
+                          }
+                        }
+                      ]);
+                    } else {
+                    }
+                    // this.safeX.setValue(prevTrans);
+                    // this.setState(({ currentProfileIndex }) => ({
+                    //   currentProfileIndex: currentProfileIndex - 1
+                    // }));
+                  }
                 })
               )
             ])
@@ -217,68 +272,76 @@ class ReCaurosel extends React.Component<IProps, IState> {
     return (
       <>
         {this.renderCode()}
-
-        <PanGestureHandler
-          onHandlerStateChange={this.gestureEvent}
-          onGestureEvent={this.gestureEvent}
+        <View
+          style={{
+            flex: 1,
+            // backgroundColor: "blue",
+            ...StyleSheet.absoluteFillObject
+          }}
         >
-          <A.View
-            style={{
-              // backgroundColor: "red"
-              justifyContent: "center",
-              alignItems: "center"
-            }}
+          <PanGestureHandler
+            onHandlerStateChange={this.gestureEvent}
+            onGestureEvent={this.gestureEvent}
           >
-            <ReText
-              text={concat(round(divide(this.masterTranslateX, width)), "")}
-            />
-            <Text
-              style={{
-                textAlign: "center"
-              }}
-            >
-              {currentProfileIndex}
-            </Text>
-            <A.View
-              style={{
-                height: height * 0.8,
-                marginTop: 32,
-                flexDirection: "row",
+            <A.View style={{}}>
+              <ReText
+                text={concat(round(divide(this.masterTranslateX, width)), "")}
+              />
+              <Text
+                style={{
+                  textAlign: "center"
+                }}
+              >
+                {currentProfileIndex}
+              </Text>
+              <A.View
+                style={{
+                  height: height * 0.8,
+                  marginTop: 32,
+                  flexDirection: "row",
+                  // backgroundColor: "green",
+                  left: 0,
+                  alignItems: "center",
+                  justifyContent: "flex-start",
 
-                left: 0,
-                alignItems: "center",
-
-                transform: [
-                  {
-                    translateX: this.masterTranslateX
-                  },
-                  {
-                    scale: 1
-                  }
-                ]
-              }}
-            >
-              {arr.map((_, i) => {
-                return (
-                  <View
-                    key={i}
-                    style={{
-                      width: width - 64,
-                      height: 300,
-                      backgroundColor: i % 2 === 0 ? "#c3c993" : "red",
-                      marginHorizontal: 32,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      borderRadius: 20
-                    }}
-                  >
-                    <Text>{i}</Text>
-                  </View>
-                );
-              })}
+                  transform: [
+                    {
+                      translateX: this.masterTranslateX
+                    },
+                    {
+                      scale: 1
+                    }
+                  ]
+                }}
+              >
+                {arr.map((_, i) => {
+                  return (
+                    <View
+                      key={i}
+                      style={{
+                        width: width - 64,
+                        height: 300,
+                        backgroundColor: i % 2 === 0 ? "#c3c993" : "red",
+                        marginLeft: 20,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        borderRadius: 20
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 52
+                        }}
+                      >
+                        {i}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </A.View>
             </A.View>
-          </A.View>
-        </PanGestureHandler>
+          </PanGestureHandler>
+        </View>
       </>
     );
   }
