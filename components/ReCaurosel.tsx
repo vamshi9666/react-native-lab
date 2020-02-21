@@ -18,6 +18,10 @@ const {
   startClock,
   defined,
   concat,
+  and,
+  or,
+  greaterOrEq,
+  lessOrEq,
   spring,
   debug,
   greaterThan,
@@ -112,7 +116,7 @@ class ReCaurosel extends React.Component<IProps, IState> {
     super(props);
     this.state = {
       currentProfileIndex: 0,
-      availablePrevCard: -1
+      availablePrevCard: 2
     };
     this.initialPostion = new Value(0);
     this.safeX = new Value(0);
@@ -136,32 +140,48 @@ class ReCaurosel extends React.Component<IProps, IState> {
     this.backwardClock = new Clock();
   }
 
-  componentDidUpdate = (prevProps: IProps, prevState: IState, _) => {
-    if (prevState.currentProfileIndex !== this.state.currentProfileIndex) {
-      this.setState(prevState => {
-        const availablePrevCard =
-          prevState.currentProfileIndex > 2
-            ? prevState.currentProfileIndex - 2
-            : -1;
-        return {
-          availablePrevCard
-        };
-      });
-    }
-  };
+  // componentDidUpdate = (prevProps: IProps, prevState: IState, _) => {
+  //   if (prevState.currentProfileIndex !== this.state.currentProfileIndex) {
+  //     alert(" index changed to " + this.state.currentProfileIndex);
+  //     this.setState(prevState => {
+  //       const availablePrevCard =
+  //         prevState.currentProfileIndex > 2
+  //           ? prevState.currentProfileIndex - 2
+  //           : -1;
+  //       return {
+  //         availablePrevCard
+  //       };
+  //     });
+  //   }
+  // };
 
+  preventEnd = new Value(0);
   renderCode = () => {
     const nextTransX = sub(this.safeX, width);
-    const prevTrans = add(this.safeX, width);
+    const prevTrans = multiply(
+      -1,
+      multiply(this.state.availablePrevCard, width)
+    );
 
     return (
       <A.Code>
         {() =>
           block([
             cond(eq(this.panState, State.ACTIVE), [
-              set(this.masterTranslateX, add(this.safeX, this.dragX))
+              cond(
+                lessThan(this.velocityX, 0),
+                [set(this.masterTranslateX, add(this.safeX, this.dragX))],
+                [
+                  cond(
+                    greaterOrEq(this.dragX, 100),
+
+                    [set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)],
+                    [set(this.masterTranslateX, add(this.safeX, this.dragX))]
+                  )
+                ]
+              )
             ]),
-            cond(eq(this.panState, State.END), [
+            cond(and(eq(this.panState, State.END), eq(this.preventEnd, 0)), [
               cond(
                 lessThan(this.dragX, -100),
                 [set(this.animState, ANIM_STATES.MOVE_FORWARD)],
@@ -235,7 +255,9 @@ class ReCaurosel extends React.Component<IProps, IState> {
                   dest: this.safeX,
                   safeX: this.safeX,
                   onComplete: () => {
-                    if (this.state.availablePrevCard === -1 && false) {
+                    if (this.state.currentProfileIndex === 0) {
+                      alert(" cant move any backward this is initial position");
+                    } else if (this.state.availablePrevCard === -1 && false) {
                       alert(" not available ");
                     } else if (this.state.availablePrevCard % 2 === 0 || true) {
                       Alert.alert(" go to -2", "just do it", [
@@ -268,6 +290,7 @@ class ReCaurosel extends React.Component<IProps, IState> {
     );
   };
   render() {
+    const { renderItem } = this.props;
     const { currentProfileIndex } = this.state;
     return (
       <>
@@ -319,10 +342,11 @@ class ReCaurosel extends React.Component<IProps, IState> {
                     <View
                       key={i}
                       style={{
-                        width: width - 64,
+                        width: width,
                         height: 300,
                         backgroundColor: i % 2 === 0 ? "#c3c993" : "red",
-                        marginLeft: 20,
+                        // marginLeft: i === 0 ? 20 : 0,
+                        // marginRight: 20,
                         justifyContent: "center",
                         alignItems: "center",
                         borderRadius: 20

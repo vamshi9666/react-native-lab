@@ -5,7 +5,7 @@ import Animated from "react-native-reanimated";
 import ReCaurosel from "./components/ReCaurosel";
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
 
-const { height } = Dimensions.get("window");
+const { height, width } = Dimensions.get("window");
 export default class App extends React.Component {
   // const [modalVisible, setModalVisible] = useState(false);
   state = {
@@ -25,14 +25,26 @@ export default class App extends React.Component {
           onItemSnapped={(index, direction) => {
             console.log(" snapped to ", index, direction);
           }}
-          renderItem={(_, itemIndex) => (
+          renderItem={i => (
             <View
               style={{
-                width: 250,
+                width: width - 32,
                 height: height * 0.8,
-                backgroundColor: "red"
+                marginHorizontal: 16,
+                backgroundColor: "red",
+                justifyContent: "center",
+                alignItems: "center"
               }}
-            />
+            >
+              <Text
+                style={{
+                  fontSize: 40,
+                  textAlign: "center"
+                }}
+              >
+                {i}{" "}
+              </Text>
+            </View>
           )}
         />
       </View>
