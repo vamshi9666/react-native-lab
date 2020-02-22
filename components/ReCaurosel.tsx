@@ -260,7 +260,7 @@ class ReCaurosel extends React.Component<IProps, IState> {
 
                     this.setState(
                       ({ currentProfileIndex }) => ({
-                        currentProfileIndex: currentProfileIndex - 1
+                        currentProfileIndex: this.props.availablePrevCard
                       }),
                       () => {
                         this.props.onItemSnapped(
@@ -305,7 +305,6 @@ class ReCaurosel extends React.Component<IProps, IState> {
                         {
                           text: "yes",
                           onPress: () => {
-                            alert(" cli");
                             this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
                             this.callBackInProgress.setValue(0);
                           }
