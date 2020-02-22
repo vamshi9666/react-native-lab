@@ -86,6 +86,7 @@ interface IProps {
   onItemSnapped: any;
   renderItem: any;
   currentIndex: number;
+  availablePrevCard: number;
 }
 
 const arr = new Array(100).fill(0);
@@ -156,46 +157,69 @@ class ReCaurosel extends React.Component<IProps, IState> {
   // };
 
   preventEnd = new Value(0);
+  callBackInProgress = new Value(0);
   renderCode = () => {
     const nextTransX = sub(this.safeX, width);
     const prevTrans = multiply(
       -1,
-      multiply(this.state.availablePrevCard, width)
+      multiply(this.props.availablePrevCard, width)
     );
 
     return (
       <A.Code>
         {() =>
           block([
-            cond(eq(this.panState, State.ACTIVE), [
-              cond(
-                lessThan(this.velocityX, 0),
-                [set(this.masterTranslateX, add(this.safeX, this.dragX))],
-                [
-                  cond(
-                    greaterOrEq(this.dragX, 100),
-
-                    [set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)],
-                    [set(this.masterTranslateX, add(this.safeX, this.dragX))]
-                  )
-                ]
-              )
-            ]),
-            cond(and(eq(this.panState, State.END), eq(this.preventEnd, 0)), [
-              cond(
-                lessThan(this.dragX, -100),
-                [set(this.animState, ANIM_STATES.MOVE_FORWARD)],
-
-                [
-                  cond(
-                    greaterThan(this.dragX, 100),
-                    [set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)],
-                    [set(this.animState, ANIM_STATES.MOVE_SAFE)]
-                  )
-                ]
+            cond(
+              and(
+                eq(this.panState, State.ACTIVE),
+                eq(this.callBackInProgress, 0)
               ),
-              set(this.panState, State.UNDETERMINED)
-            ]),
+              [
+                cond(
+                  lessThan(this.velocityX, 0),
+                  [set(this.masterTranslateX, add(this.safeX, this.dragX))],
+                  [
+                    set(this.preventEnd, 1),
+
+                    cond(
+                      and(
+                        greaterOrEq(this.dragX, 100),
+                        eq(this.callBackInProgress, 0)
+                      ),
+                      [
+                        set(this.callBackInProgress, 1),
+                        set(
+                          this.animState,
+                          ANIM_STATES.MOVE_SAFE_WITH_CALLBACK
+                        ),
+                        set(this.panState, State.UNDETERMINED)
+                      ],
+                      [set(this.masterTranslateX, add(this.safeX, this.dragX))]
+                    )
+                  ]
+                )
+              ]
+            ),
+            cond(
+              and(eq(this.callBackInProgress, 0), eq(this.panState, State.END)),
+              [
+                cond(
+                  lessThan(this.dragX, -100),
+                  [set(this.animState, ANIM_STATES.MOVE_FORWARD)],
+
+                  [
+                    cond(
+                      and(eq(this.preventEnd, 0), greaterThan(this.dragX, 100)),
+                      [
+                        set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)
+                      ],
+                      [set(this.animState, ANIM_STATES.MOVE_SAFE)]
+                    )
+                  ]
+                ),
+                set(this.panState, State.UNDETERMINED)
+              ]
+            ),
             cond(eq(this.animState, ANIM_STATES.MOVE_FORWARD), [
               set(
                 this.masterTranslateX,
@@ -206,9 +230,17 @@ class ReCaurosel extends React.Component<IProps, IState> {
                   dest: nextTransX,
                   safeX: this.safeX,
                   onComplete: () => {
-                    this.setState(({ currentProfileIndex }) => ({
-                      currentProfileIndex: currentProfileIndex + 1
-                    }));
+                    this.setState(
+                      ({ currentProfileIndex }) => ({
+                        currentProfileIndex: currentProfileIndex + 1
+                      }),
+                      () => {
+                        this.props.onItemSnapped(
+                          this.state.currentProfileIndex,
+                          "right"
+                        );
+                      }
+                    );
                   }
                 })
               )
@@ -223,11 +255,20 @@ class ReCaurosel extends React.Component<IProps, IState> {
                   dest: prevTrans,
                   safeX: this.safeX,
                   onComplete: () => {
+                    alert(" moved backward");
                     // this.safeX.setValue(prevTrans);
 
-                    this.setState(({ currentProfileIndex }) => ({
-                      currentProfileIndex: currentProfileIndex - 1
-                    }));
+                    this.setState(
+                      ({ currentProfileIndex }) => ({
+                        currentProfileIndex: currentProfileIndex - 1
+                      }),
+                      () => {
+                        this.props.onItemSnapped(
+                          this.state.currentProfileIndex,
+                          "left"
+                        );
+                      }
+                    );
                   }
                 })
               )
@@ -264,12 +305,16 @@ class ReCaurosel extends React.Component<IProps, IState> {
                         {
                           text: "yes",
                           onPress: () => {
+                            alert(" cli");
                             this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
+                            this.callBackInProgress.setValue(0);
                           }
                         },
                         {
                           text: "no",
                           onPress: () => {
+                            this.callBackInProgress.setValue(0);
+
                             // this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
                           }
                         }
@@ -290,7 +335,7 @@ class ReCaurosel extends React.Component<IProps, IState> {
     );
   };
   render() {
-    const { renderItem } = this.props;
+    const { renderItem, data } = this.props;
     const { currentProfileIndex } = this.state;
     return (
       <>
@@ -337,8 +382,10 @@ class ReCaurosel extends React.Component<IProps, IState> {
                   ]
                 }}
               >
-                {arr.map((_, i) => {
-                  return (
+                {data.map((_, i) => {
+                  return renderItem(i);
+                  {
+                    /*return (
                     <View
                       key={i}
                       style={{
@@ -360,7 +407,8 @@ class ReCaurosel extends React.Component<IProps, IState> {
                         {i}
                       </Text>
                     </View>
-                  );
+                  );*/
+                  }
                 })}
               </A.View>
             </A.View>

@@ -24,7 +24,9 @@ export default class App extends React.Component {
           data={new Array(20).fill(1)}
           onItemSnapped={(index, direction) => {
             console.log(" snapped to ", index, direction);
+            alert(" snapped to " + index + " " + direction);
           }}
+          availablePrevCard={1}
           renderItem={i => (
             <View
               style={{
