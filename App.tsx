@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, Button, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  Dimensions,
+  Alert
+} from "react-native";
 import ReModal from "./components/ReModal";
 import Animated from "react-native-reanimated";
 import ReCaurosel from "./components/ReCaurosel";
@@ -22,12 +29,13 @@ export default class App extends React.Component {
       <View style={styles.container}>
         <ReCaurosel
           data={new Array(20).fill(1)}
-          onItemSnapped={(index, direction) => {
+          onItemSnapped={({ newIndex: index, direction, goBack }) => {
             console.log(" snapped to ", index, direction);
             alert(" snapped to " + index + " " + direction);
           }}
           availablePrevCard={1}
-          renderItem={i => (
+          lazyLoad={true}
+          renderItem={({ item, index: i }) => (
             <View
               style={{
                 width: width - 32,
@@ -48,6 +56,36 @@ export default class App extends React.Component {
               </Text>
             </View>
           )}
+          callBack={({
+            oldIndex,
+            newIndex,
+            continue: continueAnimation,
+            renable
+          }) => {
+            Alert.alert(
+              " Go Back ",
+              " Are you sure to go from " +
+                String(oldIndex) +
+                " to " +
+                String(newIndex),
+              [
+                {
+                  text: "yes",
+                  onPress: () => {
+                    continueAnimation();
+                    renable();
+                  }
+                },
+                {
+                  text: "No",
+                  onPress: () => {
+                    alert(" bad luck ");
+                    renable();
+                  }
+                }
+              ]
+            );
+          }}
         />
       </View>
     );

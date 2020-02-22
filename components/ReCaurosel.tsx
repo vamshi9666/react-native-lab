@@ -1,5 +1,12 @@
 import * as React from "react";
-import { StyleSheet, Dimensions, View, Text, Alert } from "react-native";
+import {
+  StyleSheet,
+  Dimensions,
+  View,
+  Text,
+  Alert,
+  Platform
+} from "react-native";
 import A, { Easing } from "react-native-reanimated";
 import { ReText } from "react-native-redash";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
@@ -39,6 +46,10 @@ interface IState {
   currentProfileIndex: number;
   availablePrevCard: number;
 }
+
+const P = <T extends any>(android: T, ios: T): T =>
+  Platform.OS === "ios" ? ios : android;
+
 function runTiming({ clock, value, dest, safeX, animState, onComplete }) {
   const state = {
     finished: new Value(0),
@@ -81,6 +92,78 @@ function runTiming({ clock, value, dest, safeX, animState, onComplete }) {
   ]);
 }
 
+const magic = {
+  damping: 1200,
+  mass: 1,
+  stiffness: 121.6,
+  overshootClamping: true,
+  restSpeedThreshold: 0.3,
+  restDisplacementThreshold: 0.3,
+  deceleration: 0.399,
+  bouncyFactor: 1,
+  velocityFactor: P(1, 0.8),
+  toss: 0.4,
+  coefForTranslatingVelocities: 5
+};
+
+const {
+  damping,
+  mass,
+  stiffness,
+  overshootClamping,
+  restSpeedThreshold,
+  restDisplacementThreshold,
+  deceleration,
+  velocityFactor,
+  toss
+} = magic;
+function runSpring({
+  clock,
+  value,
+  velocity,
+  dest,
+  animState,
+  safeX,
+  onComplete
+}) {
+  const state = {
+    finished: new Value(0),
+    velocity: new Value(0),
+    position: new Value(0),
+    time: new Value(0)
+  };
+
+  const config = {
+    damping,
+    mass,
+    stiffness,
+    overshootClamping,
+    restSpeedThreshold,
+    restDisplacementThreshold,
+    toValue: new Value(0)
+  };
+
+  return [
+    cond(clockRunning(clock), 0, [
+      set(state.finished, 0),
+      set(state.velocity, velocity),
+      set(state.position, value),
+      set(config.toValue, dest),
+      startClock(clock)
+    ]),
+    spring(clock, state, config),
+    cond(state.finished, [
+      stopClock(clock),
+      set(animState, 0),
+      // debug(" before safeX", safeX),
+
+      set(safeX, dest),
+      // debug(" after safeX", safeX),
+      call([], onComplete)
+    ]),
+    state.position
+  ];
+}
 interface IProps {
   data: any;
   onItemSnapped: any;
@@ -97,7 +180,7 @@ const ANIM_STATES = {
   MOVE_BACKWARD: 3,
   MOVE_SAFE_WITH_CALLBACK: 4
 };
-class ReCaurosel extends React.Component<IProps, IState> {
+class ReCaurosel extends React.Component<any, IState> {
   static defaultProps = {
     currentIndex: 0
   };
@@ -223,7 +306,8 @@ class ReCaurosel extends React.Component<IProps, IState> {
             cond(eq(this.animState, ANIM_STATES.MOVE_FORWARD), [
               set(
                 this.masterTranslateX,
-                runTiming({
+                runSpring({
+                  velocity: this.velocityX,
                   clock: this.forwardClock,
                   animState: this.animState,
                   value: this.masterTranslateX,
@@ -235,10 +319,11 @@ class ReCaurosel extends React.Component<IProps, IState> {
                         currentProfileIndex: currentProfileIndex + 1
                       }),
                       () => {
-                        this.props.onItemSnapped(
-                          this.state.currentProfileIndex,
-                          "right"
-                        );
+                        this.props.onItemSnapped({
+                          newIndex: this.state.currentProfileIndex,
+                          direction: "right",
+                          goBack: () => ({})
+                        });
                       }
                     );
                   }
@@ -248,25 +333,26 @@ class ReCaurosel extends React.Component<IProps, IState> {
             cond(eq(this.animState, ANIM_STATES.MOVE_BACKWARD), [
               set(
                 this.masterTranslateX,
-                runTiming({
+                runSpring({
+                  velocity: this.velocityX,
+
                   clock: this.backwardClock,
                   animState: this.animState,
                   value: this.masterTranslateX,
                   dest: prevTrans,
                   safeX: this.safeX,
                   onComplete: () => {
-                    alert(" moved backward");
-                    // this.safeX.setValue(prevTrans);
-
                     this.setState(
                       ({ currentProfileIndex }) => ({
                         currentProfileIndex: this.props.availablePrevCard
                       }),
+
                       () => {
-                        this.props.onItemSnapped(
-                          this.state.currentProfileIndex,
-                          "left"
-                        );
+                        this.props.onItemSnapped({
+                          newIndex: this.state.currentProfileIndex,
+                          direction: "left",
+                          goBack: () => ({})
+                        });
                       }
                     );
                   }
@@ -276,7 +362,8 @@ class ReCaurosel extends React.Component<IProps, IState> {
             cond(eq(this.animState, ANIM_STATES.MOVE_SAFE), [
               set(
                 this.masterTranslateX,
-                runTiming({
+                runSpring({
+                  velocity: this.velocityX,
                   clock: this.normalClock,
                   animState: this.animState,
                   value: this.masterTranslateX,
@@ -289,7 +376,8 @@ class ReCaurosel extends React.Component<IProps, IState> {
             cond(eq(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK), [
               set(
                 this.masterTranslateX,
-                runTiming({
+                runSpring({
+                  velocity: this.velocityX,
                   clock: this.backwardClock,
                   animState: this.animState,
                   value: this.masterTranslateX,
@@ -298,32 +386,37 @@ class ReCaurosel extends React.Component<IProps, IState> {
                   onComplete: () => {
                     if (this.state.currentProfileIndex === 0) {
                       alert(" cant move any backward this is initial position");
-                    } else if (this.state.availablePrevCard === -1 && false) {
+                    } else if (this.state.availablePrevCard === -1) {
                       alert(" not available ");
-                    } else if (this.state.availablePrevCard % 2 === 0 || true) {
-                      Alert.alert(" go to -2", "just do it", [
-                        {
-                          text: "yes",
-                          onPress: () => {
+                    } else if (this.state.availablePrevCard % 2 === 0) {
+                      this.props.callBack({
+                        oldIndex: this.state.currentProfileIndex,
+                        newIndex: this.state.availablePrevCard,
+                        continue: () => {
+                          requestAnimationFrame(() => {
                             this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
                             this.callBackInProgress.setValue(0);
-                          }
+                          });
                         },
-                        {
-                          text: "no",
-                          onPress: () => {
-                            this.callBackInProgress.setValue(0);
-
-                            // this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
-                          }
-                        }
-                      ]);
+                        renable: () => this.callBackInProgress.setValue(0)
+                      });
+                      // Alert.alert(" go to -2", "just do it", [
+                      //   {
+                      //     text: "yes",
+                      //     onPress: () => {
+                      //       this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
+                      //       this.callBackInProgress.setValue(0);
+                      //     }
+                      //   },
+                      //   {
+                      //     text: "no",
+                      //     onPress: () => {
+                      //       this.callBackInProgress.setValue(0);
+                      //     }
+                      //   }
+                      // ]);
                     } else {
                     }
-                    // this.safeX.setValue(prevTrans);
-                    // this.setState(({ currentProfileIndex }) => ({
-                    //   currentProfileIndex: currentProfileIndex - 1
-                    // }));
                   }
                 })
               )
@@ -381,33 +474,12 @@ class ReCaurosel extends React.Component<IProps, IState> {
                   ]
                 }}
               >
-                {data.map((_, i) => {
-                  return renderItem(i);
-                  {
-                    /*return (
-                    <View
-                      key={i}
-                      style={{
-                        width: width,
-                        height: 300,
-                        backgroundColor: i % 2 === 0 ? "#c3c993" : "red",
-                        // marginLeft: i === 0 ? 20 : 0,
-                        // marginRight: 20,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        borderRadius: 20
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 52
-                        }}
-                      >
-                        {i}
-                      </Text>
-                    </View>
-                  );*/
-                  }
+                {data.map((obj, i) => {
+                  return (
+                    <React.Fragment key={i}>
+                      {renderItem({ item: obj, index: i })}
+                    </React.Fragment>
+                  );
                 })}
               </A.View>
             </A.View>
