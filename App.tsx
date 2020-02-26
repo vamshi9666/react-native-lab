@@ -30,7 +30,7 @@ export default class App extends React.Component {
       <View style={styles.container}>
         <StatusBar hidden />
         <ReOneStepCaurosel
-          startIndex={4}
+          startIndex={2}
           data={arr}
           onItemSnapped={({ newIndex: index, direction, goBack }) => {
             console.log(" snapped to ", index, direction);
