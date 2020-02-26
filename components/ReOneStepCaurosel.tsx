@@ -255,7 +255,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
       this.setState(({ data }) => {
         const newData = Object.assign([], data);
         newData.push(lastObj);
-        // newData.splice(0, 1);
+        newData.splice(0, 1);
         // this.masterTranslateX.setValue(add(this.masterTranslateX, width));
 
         return {
@@ -504,21 +504,38 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                   ]
                 }}
               >
-                {data.map((obj, i) => {
-                  return (
-                    <A.View
-                      style={
-                        {
-                          // position: "absolute",
-                          // transform: [{ translateX: i * width }]
-                        }
-                      }
-                      key={i}
-                    >
-                      {renderItem({ item: obj, index: i })}
-                    </A.View>
-                  );
-                })}
+                <A.View
+                  style={{
+                    position: "absolute",
+                    transform: [{ translateX: 0 * width }]
+                  }}
+                >
+                  {renderItem({ item: data[0], index: 0 })}
+                </A.View>
+                <A.View
+                  style={{
+                    position: "absolute",
+                    transform: [{ translateX: 1 * width }]
+                  }}
+                >
+                  {renderItem({ item: data[1], index: 1 })}
+                </A.View>
+                <A.View
+                  style={{
+                    position: "absolute",
+                    transform: [{ translateX: 2 * width }]
+                  }}
+                >
+                  {renderItem({ item: data[2], index: 2 })}
+                </A.View>
+                <A.View
+                  style={{
+                    position: "absolute",
+                    transform: [{ translateX: 3 * width }]
+                  }}
+                >
+                  {renderItem({ item: data[3], index: 3 })}
+                </A.View>
               </A.View>
             </A.View>
           </PanGestureHandler>
