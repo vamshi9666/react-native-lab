@@ -44,9 +44,11 @@ export default class App extends React.Component {
                 width: width - 32,
                 height: height * 0.8,
                 marginHorizontal: 16,
-                backgroundColor: "red",
+                backgroundColor: "#E6172E",
+                borderRadius: 20,
                 justifyContent: "center",
-                alignItems: "center"
+                alignItems: "center",
+                ...styles.showdowStyles
               }}
             >
               <Text
@@ -106,5 +108,14 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexDirection: "row",
     alignItems: "center"
+  },
+  showdowStyles: {
+    shadowColor: "#000",
+    shadowOpacity: 0.5,
+    shadowOffset: {
+      width: 0,
+      height: 3
+    },
+    shadowRadius: 20
   }
 });
