@@ -7,8 +7,7 @@ import {
   Alert,
   Platform
 } from "react-native";
-import { isEqual } from "lodash";
-import A, { Easing, Transition, Transitioning } from "react-native-reanimated";
+import A, { Easing } from "react-native-reanimated";
 import { ReText } from "react-native-redash";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 
@@ -18,7 +17,6 @@ const {
   Clock,
   cond,
   eq,
-  neq,
   Value,
   set,
   block,
@@ -178,7 +176,6 @@ interface IProps {
 }
 
 interface IState {
-  data: any[];
   currentProfileIndex: number;
   availablePrevCard: number;
   showLast: boolean;
@@ -204,7 +201,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
   static defaultProps = {
     currentIndex: 0
   };
-  private masterTranslateX: any;
   private gestureEvent: any;
   private safeX: any;
   private animState: A.Value<number>;
@@ -228,14 +224,13 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
   private fourthCardSafeX: A.Adaptable<any>;
   private backWardCallbackComplete: any;
   private values: Array<A.Adaptable<any>>;
-  private valueToPushLast: A.Value<0 | 1 | 2 | 3>;
+  private valueToPushLast: A.Value<-1 | 0 | 1 | 2 | 3>;
   private valueToPushFirst: A.Value<0 | 1 | 2 | 3>;
   constructor(props: IProps) {
     super(props);
     const { startIndex } = props;
 
     this.state = {
-      data: [],
       showLast: true,
       showFirst: true,
       currentProfileIndex: 0,
@@ -244,7 +239,8 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
       secondObj: null,
       thirdObj: null,
       fourthObj: null,
-      objToBeUpdatedForRightSwipe: -1
+      objToBeUpdatedForRightSwipe: -1,
+      currentInViewPort: 0
     };
     this.safeX = new Value(0);
     this.progressclock = new Clock();
@@ -261,7 +257,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
         }
       }
     ]);
-    this.masterTranslateX = new Value(0);
     this.forwardClock = new Clock();
     this.normalClock = new Clock();
     this.backwardClock = new Clock();
@@ -281,7 +276,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
     this.forwardComplete = new Value(0);
     this.backwardComplete = new Value(0);
     this.backWardCallbackComplete = new Value(0);
-    this.valueToPushLast = new Value(0);
+    this.valueToPushLast = new Value(-1);
     this.valueToPushFirst = new Value(3);
 
     this.values = [0, 1, 2, 3].map(i => {
@@ -305,40 +300,17 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
         const nextObj = data[2];
         const fourthObj = data[3];
 
-        const arr = [prevObj, currentObj, nextObj, fourthObj];
-        this.setState(
-          {
-            firstObj: prevObj,
-            secondObj: currentObj,
-            thirdObj: nextObj,
-            fourthObj
-            // data: arr
-          },
-          () => {
-            const { firstObj, secondObj, thirdObj, fourthObj } = this.state;
-            console.log(" after is ", {
-              firstObj,
-              secondObj,
-              thirdObj,
-              fourthObj
-            });
-          }
-        );
+        this.setState({
+          firstObj: prevObj,
+          secondObj: currentObj,
+          thirdObj: nextObj,
+          fourthObj
+          // data: arr
+        });
       } else {
         const lastObj = this.props.data[currentProfileIndex + 2];
-        const {
-          data,
-          objToBeUpdatedForRightSwipe,
-          firstObj,
-          secondObj,
-          thirdObj,
-          fourthObj
-        } = this.state;
-        console.log(
-          " new one objToBeUpdatedForRightSwipe",
-          objToBeUpdatedForRightSwipe
-        );
-        const newData = Object.assign([], data);
+        const { objToBeUpdatedForRightSwipe } = this.state;
+
         // newData.splice(0, 1);
         // newData.push(lastObj);
         const targetObj =
@@ -350,42 +322,10 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
             ? "thirdObj"
             : "fourthObj";
 
-        console.log(" before new total are ", {
-          firstObj,
-          secondObj,
-          thirdObj,
-          fourthObj,
-          targetObj
+        this.setState({
+          [targetObj]: lastObj
         });
-        this.setState(
-          {
-            [targetObj]: lastObj,
-
-            data: newData
-          },
-          () => {
-            const { firstObj, secondObj, thirdObj, fourthObj } = this.state;
-            console.log(" new total one are ", {
-              firstObj,
-              secondObj,
-              thirdObj,
-              fourthObj,
-              targetObj
-            });
-            // alert(JSON.stringify({ old: this.state.data, new: newData }));
-          }
-        );
       }
-      // console.log(" new cards are ", newData);
-      // this.setState({
-      //
-      //       me: true
-      //       data: newData
-      //     },
-      //   () => {
-      //     console.log(" set state to ", this.state.data);
-      //   }
-      // )
     });
   };
   componentDidMount = () => {
@@ -402,26 +342,42 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
             cond(eq(this.backwardComplete, 1), [
               set(this.animState, 0),
               set(this.backwardComplete, 0),
-              cond(eq(this.valueToPushFirst, 0), [
-                set(this.firstCardTransX, -1 * width),
-                set(this.firstCardSafeX, -1 * width),
-                set(this.valueToPushFirst, 3)
-              ]),
-              cond(eq(this.valueToPushFirst, 1), [
-                set(this.secondCardTransX, -1 * width),
-                set(this.secondCardSafeX, -1 * width),
-                set(this.valueToPushFirst, 0)
-              ]),
-              cond(eq(this.valueToPushFirst, 2), [
-                set(this.thirdCardTransX, -1 * width),
-                set(this.thirdCardSafeX, -1 * width),
-                set(this.valueToPushFirst, 1)
-              ]),
-              cond(eq(this.valueToPushFirst, 3), [
-                set(this.fourthCardTransX, -1 * width),
-                set(this.fourthCardSafeX, -1 * width),
-                set(this.valueToPushFirst, 2)
-              ]),
+              cond(
+                eq(this.valueToPushFirst, 0),
+                [
+                  set(this.firstCardTransX, -1 * width),
+                  set(this.firstCardSafeX, -1 * width),
+                  set(this.valueToPushFirst, 3)
+                ],
+                [
+                  cond(
+                    eq(this.valueToPushFirst, 1),
+                    [
+                      set(this.secondCardTransX, -1 * width),
+                      set(this.secondCardSafeX, -1 * width),
+                      set(this.valueToPushFirst, 0)
+                    ],
+                    [
+                      cond(
+                        eq(this.valueToPushFirst, 2),
+                        [
+                          set(this.thirdCardTransX, -1 * width),
+                          set(this.thirdCardSafeX, -1 * width),
+                          set(this.valueToPushFirst, 1)
+                        ],
+                        [
+                          cond(eq(this.valueToPushFirst, 3), [
+                            set(this.fourthCardTransX, -1 * width),
+                            set(this.fourthCardSafeX, -1 * width),
+                            set(this.valueToPushFirst, 2)
+                          ])
+                        ]
+                      )
+                    ]
+                  )
+                ]
+              ),
+
               call([], () => {
                 this.setState(
                   ({ currentProfileIndex }) => ({
@@ -441,37 +397,41 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
             cond(eq(this.forwardComplete, 1), [
               set(this.animState, 0),
               set(this.forwardComplete, 0),
-              // set(this.firstCardSafeX, width),
-              // set(this.firstCardTransX, width),
               cond(
-                eq(this.valueToPushLast, 0),
-                [
-                  set(this.firstCardTransX, width),
-                  set(this.firstCardSafeX, width),
-                  set(this.valueToPushLast, 1)
-                ],
+                eq(this.valueToPushLast, -1),
+                [set(this.valueToPushLast, 0)],
                 [
                   cond(
-                    eq(this.valueToPushLast, 1),
+                    eq(this.valueToPushLast, 0),
                     [
-                      set(this.secondCardTransX, width),
-                      set(this.secondCardSafeX, width),
-                      set(this.valueToPushLast, 2)
+                      set(this.firstCardTransX, width),
+                      set(this.firstCardSafeX, width),
+                      set(this.valueToPushLast, 1)
                     ],
                     [
                       cond(
-                        eq(this.valueToPushLast, 2),
+                        eq(this.valueToPushLast, 1),
                         [
-                          set(this.thirdCardTransX, width),
-                          set(this.thirdCardSafeX, width),
-                          set(this.valueToPushLast, 3)
+                          set(this.secondCardTransX, width),
+                          set(this.secondCardSafeX, width),
+                          set(this.valueToPushLast, 2)
                         ],
                         [
-                          cond(eq(this.valueToPushLast, 3), [
-                            set(this.fourthCardTransX, width),
-                            set(this.fourthCardSafeX, width),
-                            set(this.valueToPushLast, 0)
-                          ])
+                          cond(
+                            eq(this.valueToPushLast, 2),
+                            [
+                              set(this.thirdCardTransX, width),
+                              set(this.thirdCardSafeX, width),
+                              set(this.valueToPushLast, 3)
+                            ],
+                            [
+                              cond(eq(this.valueToPushLast, 3), [
+                                set(this.fourthCardTransX, width),
+                                set(this.fourthCardSafeX, width),
+                                set(this.valueToPushLast, 0)
+                              ])
+                            ]
+                          )
                         ]
                       )
                     ]
@@ -481,7 +441,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
 
               call([], () => {
                 const { currentProfileIndex, currentInViewPort } = this.state;
-                alert(" to be " + this.state.currentInViewPort);
 
                 this.setState(
                   {
@@ -508,7 +467,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
               set(this.animState, 0),
               // set(this.callBackInProgress, 0),
               // set(this.preventEnd, 0),
-              // set(this.backWardCallbackComplete, 0),
+              set(this.backWardCallbackComplete, 0),
               call([], () => {
                 if (this.state.currentProfileIndex === 0) {
                   alert(" cant move any backward this is initial position");
@@ -524,16 +483,13 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                     continue: () => {
                       requestAnimationFrame(() => {
                         this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
-                        this.callBackInProgress.setValue(0);
                       });
                     },
                     renable: () => this.callBackInProgress.setValue(0)
                   });
                 }
               })
-            ]),
-
-            onChange(this.valueToPushLast, [])
+            ])
           ])
         }
       </A.Code>
@@ -785,14 +741,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
   };
   render() {
     const { renderItem } = this.props;
-    const {
-      currentProfileIndex,
-      data,
-      firstObj,
-      secondObj,
-      thirdObj,
-      fourthObj
-    } = this.state;
+    const { firstObj, secondObj, thirdObj, fourthObj } = this.state;
     return (
       <>
         {this.renderEventsCode()}
@@ -809,8 +758,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
             onGestureEvent={this.gestureEvent}
           >
             <A.View style={{}}>
-              {/*<ReText text={concat("", this.velocityX)} />*/}
-              <Text>{data.length} </Text>
+              <ReText text={concat("", this.animState)} />
               <A.View
                 style={{
                   height: height * 0.8,
