@@ -4,15 +4,16 @@ import {
   Text,
   View,
   Button,
+  StatusBar,
   Dimensions,
   Alert
 } from "react-native";
 import ReModal from "./components/ReModal";
 import Animated from "react-native-reanimated";
-import ReCaurosel from "./components/ReCaurosel";
+import ReOneStepCaurosel from "./components/ReOneStepCaurosel";
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
-
 const { height, width } = Dimensions.get("window");
+const arr = new Array(30).fill(1).map((i, index) => index);
 export default class App extends React.Component {
   // const [modalVisible, setModalVisible] = useState(false);
   state = {
@@ -27,11 +28,13 @@ export default class App extends React.Component {
     const { progress } = this;
     return (
       <View style={styles.container}>
-        <ReCaurosel
-          data={new Array(20).fill(1)}
+        <StatusBar hidden />
+        <ReOneStepCaurosel
+          startIndex={4}
+          data={arr}
           onItemSnapped={({ newIndex: index, direction, goBack }) => {
             console.log(" snapped to ", index, direction);
-            alert(" snapped to " + index + " " + direction);
+            // alert(" snapped to " + index + " " + direction);
           }}
           availablePrevCard={1}
           lazyLoad={true}
@@ -52,7 +55,7 @@ export default class App extends React.Component {
                   textAlign: "center"
                 }}
               >
-                {i}{" "}
+                {item}
               </Text>
             </View>
           )}
