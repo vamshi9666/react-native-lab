@@ -6,14 +6,11 @@ import {
   Button,
   StatusBar,
   Dimensions,
-  Alert
+  Alert,
+  FlatList
 } from "react-native";
-import ReModal from "./components/ReModal";
 import Animated from "react-native-reanimated";
-import ReOneStepCaurosel from "./components/ReOneStepCaurosel";
-import CloneCaurosel from "./components/CloneCaurousel";
-import VirtualCaurosel from "./components/VirtualCaurosel";
-
+import Highlighter from "./components/Highlighter";
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
 const { height, width } = Dimensions.get("window");
 const arr = new Array(30).fill(1).map((i, index) => index + 1);
@@ -32,67 +29,17 @@ export default class App extends React.Component {
     return (
       <View style={styles.container}>
         <StatusBar hidden />
-        <ReOneStepCaurosel
-          startIndex={2}
-          data={arr}
-          onItemSnapped={({ newIndex: index, direction, goBack }) => {
-            // console.log(" snapped to ", index, direction);
-            // alert(" snapped to " + index + " " + direction);
+        <FlatList
+          numColumns={3}
+          contentContainerStyle={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center"
           }}
-          availablePrevCard={1}
-          lazyLoad={true}
-          renderItem={({ item, index: i }) => (
-            <View
-              style={{
-                width: width - 32,
-                height: height * 0.8,
-                marginHorizontal: 16,
-                backgroundColor: "#E6172E",
-                borderRadius: 20,
-                justifyContent: "center",
-                alignItems: "center",
-                ...styles.showdowStyles
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 40,
-                  textAlign: "center"
-                }}
-              >
-                {item}
-              </Text>
-            </View>
-          )}
-          callBack={({
-            oldIndex,
-            newIndex,
-            continue: continueAnimation,
-            renable
-          }) => {
-            Alert.alert(
-              " Go Back ",
-              " Are you sure to go from " +
-                String(oldIndex) +
-                " to " +
-                String(newIndex),
-              [
-                {
-                  text: "yes",
-                  onPress: () => {
-                    continueAnimation();
-                    renable();
-                  }
-                },
-                {
-                  text: "No",
-                  onPress: () => {
-                    alert(" bad luck ");
-                    renable();
-                  }
-                }
-              ]
-            );
+          data={arr}
+          renderItem={({ index, item }) => {
+            console.log(" tem is ", item);
+            return <Highlighter content={item} />;
           }}
         />
       </View>
@@ -106,7 +53,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "flex-end",
-    paddingBottom: 50
+    paddingVertical: 16
+    // paddingBottom: 50
   },
   scrollContainer: {
     flexDirection: "row",
