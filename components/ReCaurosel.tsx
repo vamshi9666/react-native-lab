@@ -444,9 +444,9 @@ class ReCaurosel extends React.Component<any, IState> {
             onGestureEvent={this.gestureEvent}
           >
             <A.View style={{}}>
-              <ReText
+              {/*<ReText
                 text={concat(round(divide(this.masterTranslateX, width)), "")}
-              />
+              />*/}
               <Text
                 style={{
                   textAlign: "center"
