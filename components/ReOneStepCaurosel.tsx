@@ -62,7 +62,7 @@ function runTiming({ value, dest, safeX, completeNode }) {
   };
 
   const config = {
-    duration: 500,
+    duration: 1500,
 
     toValue: new Value(0),
     easing: Easing.inOut(Easing.ease)
@@ -85,10 +85,7 @@ function runTiming({ value, dest, safeX, completeNode }) {
     cond(state.finished, [
       stopClock(clock),
       set(completeNode, 1),
-      // debug(" before safeX", safeX),
-
       set(safeX, dest)
-      // debug(" after safeX", safeX),
     ]),
     state.position
   ]);
@@ -233,10 +230,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
   private fourthCardSafeX: A.Adaptable<any>;
   private fifthCardSafeX: A.Adaptable<any>;
   private backWardCallbackComplete: any;
-  private values: Array<A.Adaptable<any>>;
   private valueToPushLast: A.Value<number>;
-  private recycleToLast: A.Value<0 | 1>;
-  private recycleToFirst: A.Value<0 | 1>;
   private valueToPushFirst: A.Value<number>;
   constructor(props: IProps) {
     super(props);
@@ -283,8 +277,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
     this.fifthcardTransX = new Value(fifthCardValue);
 
     //recylers
-    this.recycleToLast = new Value(0);
-    this.recycleToFirst = new Value(0);
     //safevalues
 
     this.firstCardSafeX = new Value(firstCardValue);
@@ -412,13 +404,9 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
       <A.Code>
         {() =>
           block([
-            // debug(" value ")
-            debug("out  value ", this.valueToPushLast),
-
             cond(eq(this.backwardComplete, 1), [
               set(this.animState, 0),
               set(this.preventEnd, 0),
-
               set(this.backwardComplete, 0)
             ]),
             cond(eq(this.forwardComplete, 1), [
@@ -651,6 +639,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                 set(
                   val,
                   runTiming({
+                    clock: new Clock(),
                     value: val,
                     dest: sub(safe, width),
                     safeX: safe,
@@ -675,7 +664,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
               )
             ]),
             cond(eq(this.animState, ANIM_STATES.MOVE_SAFE), [
-              // ...setAllCardsEndToSafe(new Value(0)),
               values.map(({ val, safe }) =>
                 set(
                   val,
@@ -728,7 +716,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
               [
                 cond(
                   lessThan(this.velocityX, 0),
-                  [...setAllCardsActive],
+                  [...setAllCardsActive, 0],
                   [
                     cond(
                       and(
@@ -738,7 +726,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
 
                       [
                         set(this.preventEnd, 1),
-
                         set(this.callBackInProgress, 1),
                         set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)
                       ],
@@ -748,7 +735,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                 )
               ]
             ),
-            // debug("bow", this.preventEnd),
 
             cond(and(eq(this.preventEnd, 0), eq(this.panState, State.END)), [
               cond(
@@ -763,8 +749,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                     ),
                     [set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)],
                     [set(this.animState, ANIM_STATES.MOVE_SAFE)]
-                    // [set(this.animState, ANIM_STATES.MOVE_BACKWARD)],
-                    // [set(this.animState, ANIM_STATES.MOVE_FORWARD)]
                   )
                 ]
               )
@@ -804,7 +788,10 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                 <ReText
                   text={concat(
                     "first ",
-                    round(divide(this.firstCardTransX, width))
+                    // round(divide(
+                    this.firstCardTransX
+                    // , width)
+                    // )
                   )}
                 />
                 <ReText
