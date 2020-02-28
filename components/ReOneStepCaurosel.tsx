@@ -61,7 +61,7 @@ function runTiming({ value, dest, safeX, completeNode }) {
   };
 
   const config = {
-    duration: 500,
+    duration: 5500,
 
     toValue: new Value(0),
     easing: Easing.inOut(Easing.ease)
