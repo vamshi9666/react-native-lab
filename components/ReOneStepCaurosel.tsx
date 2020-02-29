@@ -342,15 +342,15 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
             () => {
               const { firstObj, secondObj, thirdObj, fourthObj } = this.state;
 
-              alert(
-                " target is " +
-                  JSON.stringify({
-                    firstObj,
-                    secondObj,
-                    thirdObj,
-                    fourthObj
-                  })
-              );
+              // alert(
+              //   " target is " +
+              //     JSON.stringify({
+              //       firstObj,
+              //       secondObj,
+              //       thirdObj,
+              //       fourthObj
+              //     })
+              // );
             }
           );
         } else {
