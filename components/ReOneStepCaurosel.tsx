@@ -183,6 +183,7 @@ interface IState {
   secondObj: any;
   thirdObj: any;
   fourthObj: any;
+  fifthObj: any;
   objToBeUpdatedForRightSwipe: number;
   currentInViewPort?: number;
   objToBeUpdatedForLeftSwipe: number;
@@ -231,6 +232,10 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
   private values: Array<A.Adaptable<any>>;
   private valueToPushLast: A.Value<number>;
   private valueToPushFirst: A.Value<number>;
+  private preventEnd: A.Value<number>;
+  private fifthCardTransX: A.Value<number>;
+  private fifthCardSafeX: A.Value<number>;
+  private callBackInProgress: A.Value<number>;
   constructor(props: IProps) {
     super(props);
     const { startIndex } = props;
@@ -242,6 +247,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
       secondObj: null,
       thirdObj: null,
       fourthObj: null,
+      fifthObj: null,
       objToBeUpdatedForRightSwipe: CARD_INDEXES.NONE,
       objToBeUpdatedForLeftSwipe: CARD_INDEXES.FOURTH,
       currentInViewPort: CARD_INDEXES.FIRST
@@ -267,23 +273,29 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
     const secondCardValue = 1 * width;
     const thirdCardValue = 2 * width;
     const fourthCardValue = 3 * width;
+    const fifthCardValue = 4 * width;
+
     this.firstCardTransX = new Value(firstCardValue);
     this.secondCardTransX = new Value(secondCardValue);
     this.thirdCardTransX = new Value(thirdCardValue);
     this.fourthCardTransX = new Value(fourthCardValue);
 
+    this.fifthCardTransX = new Value(fifthCardValue);
     //safevalues
 
     this.firstCardSafeX = new Value(firstCardValue);
     this.secondCardSafeX = new Value(secondCardValue);
     this.thirdCardSafeX = new Value(thirdCardValue);
     this.fourthCardSafeX = new Value(fourthCardValue);
+    this.fifthCardSafeX = new Value(fifthCardValue);
     //complete nodes
     this.forwardComplete = new Value(0);
     this.backwardComplete = new Value(0);
     this.backWardCallbackComplete = new Value(0);
     this.valueToPushLast = new Value(CARD_INDEXES.NONE);
     this.valueToPushFirst = new Value(CARD_INDEXES.NONE);
+    this.preventEnd = new Value(0);
+    this.callBackInProgress = new Value(0);
   }
 
   reArrangeData = (initialRender?: boolean, forward?: boolean) => {
@@ -296,16 +308,17 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
         const currentObj = data[1];
         const nextObj = data[2];
         const fourthObj = data[3];
-
+        const fifthObj = data[4];
         this.setState({
           firstObj: prevObj,
           secondObj: currentObj,
           thirdObj: nextObj,
-          fourthObj
+          fourthObj,
+          fifthObj
           // data: arr
         });
       } else {
-        // return;
+        return;
         if (forward) {
           const {
             objToBeUpdatedForRightSwipe,
@@ -381,8 +394,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
     this.reArrangeData(true, true);
   };
 
-  preventEnd = new Value(0);
-  callBackInProgress = new Value(0);
   renderCallbackCode = () => {
     const prevMultiplier = -2;
     const nextMultiplier = 1;
@@ -501,10 +512,10 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                           objToBeUpdatedForRightSwipe
                         } = this.state;
 
-                        alert(
-                          " before push to first " +
-                            this.state.objToBeUpdatedForLeftSwipe
-                        );
+                        // alert(
+                        //   " before push to first " +
+                        //     this.state.objToBeUpdatedForLeftSwipe
+                        // );
                         this.valueToPushFirst.setValue(
                           objToBeUpdatedForLeftSwipe
                         );
@@ -524,7 +535,10 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                         this.animState.setValue(ANIM_STATES.MOVE_BACKWARD);
                       });
                     },
-                    renable: () => this.callBackInProgress.setValue(0)
+                    renable: () => {
+                      this.callBackInProgress.setValue(0);
+                      this.animState.setValue(ANIM_STATES.MOVE_SAFE);
+                    }
                   });
                 }
               }),
@@ -539,44 +553,6 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
   renderAnimationsCode = () => {
     const nextTransX = sub(0, width);
     const prevTrans = add(0, width);
-    const setAllCardsEndToSafe = (completeNode: A.Adaptable<any>) => [
-      set(
-        this.firstCardTransX,
-        runTiming({
-          completeNode: completeNode,
-          value: this.firstCardTransX,
-          dest: this.firstCardSafeX,
-          safeX: this.firstCardSafeX
-        })
-      ),
-      set(
-        this.secondCardTransX,
-        runTiming({
-          completeNode: new Value(0),
-          value: this.secondCardTransX,
-          dest: this.secondCardSafeX,
-          safeX: this.secondCardSafeX
-        })
-      ),
-      set(
-        this.thirdCardTransX,
-        runTiming({
-          completeNode: new Value(0),
-          value: this.thirdCardTransX,
-          dest: this.thirdCardSafeX,
-          safeX: this.thirdCardSafeX
-        })
-      ),
-      set(
-        this.fourthCardTransX,
-        runTiming({
-          completeNode: new Value(0),
-          value: this.fourthCardTransX,
-          dest: this.fourthCardSafeX,
-          safeX: this.fourthCardSafeX
-        })
-      )
-    ];
     return (
       <A.Code>
         {() =>
@@ -658,12 +634,85 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
               )
             ]),
             cond(eq(this.animState, ANIM_STATES.MOVE_SAFE), [
-              ...setAllCardsEndToSafe(new Value(0)),
+              set(
+                this.firstCardTransX,
+                runTiming({
+                  completeNode: new Value(0),
+                  value: this.firstCardTransX,
+                  dest: this.firstCardSafeX,
+                  safeX: this.firstCardSafeX
+                })
+              ),
+              set(
+                this.secondCardTransX,
+                runTiming({
+                  completeNode: new Value(0),
+                  value: this.secondCardTransX,
+                  dest: this.secondCardSafeX,
+                  safeX: this.secondCardSafeX
+                })
+              ),
+              set(
+                this.thirdCardTransX,
+                runTiming({
+                  completeNode: new Value(0),
+                  value: this.thirdCardTransX,
+                  dest: this.thirdCardSafeX,
+                  safeX: this.thirdCardSafeX
+                })
+              ),
+              set(
+                this.fourthCardTransX,
+                runTiming({
+                  completeNode: new Value(0),
+                  value: this.fourthCardTransX,
+                  dest: this.fourthCardSafeX,
+                  safeX: this.fourthCardSafeX
+                })
+              ),
               set(this.callBackInProgress, 0),
               set(this.preventEnd, 0)
             ]),
             cond(eq(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK), [
-              ...setAllCardsEndToSafe(this.backWardCallbackComplete)
+              // ...setAllCardsEndToSafe(this.backWardCallbackComplete),
+              set(
+                this.firstCardTransX,
+                runTiming({
+                  completeNode: this.backWardCallbackComplete,
+                  value: this.firstCardTransX,
+                  dest: this.firstCardSafeX,
+                  safeX: this.firstCardSafeX
+                })
+              ),
+              set(
+                this.secondCardTransX,
+                runTiming({
+                  completeNode: new Value(0),
+                  value: this.secondCardTransX,
+                  dest: this.secondCardSafeX,
+                  safeX: this.secondCardSafeX
+                })
+              ),
+              set(
+                this.thirdCardTransX,
+                runTiming({
+                  completeNode: new Value(0),
+                  value: this.thirdCardTransX,
+                  dest: this.thirdCardSafeX,
+                  safeX: this.thirdCardSafeX
+                })
+              ),
+              set(
+                this.fourthCardTransX,
+                runTiming({
+                  completeNode: new Value(0),
+                  value: this.fourthCardTransX,
+                  dest: this.fourthCardSafeX,
+                  safeX: this.fourthCardSafeX
+                })
+              ),
+              set(this.callBackInProgress, 0),
+              set(this.preventEnd, 0)
             ])
           ])
         }
@@ -738,7 +787,7 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
   };
   render() {
     const { renderItem } = this.props;
-    const { firstObj, secondObj, thirdObj, fourthObj } = this.state;
+    const { firstObj, secondObj, thirdObj, fourthObj, fifthObj } = this.state;
     const arr = new Array(4);
     return (
       <>
@@ -813,6 +862,17 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                   }}
                 >
                   {renderItem({ item: fourthObj, index: 3 })}
+                </A.View>
+                <A.View
+                  style={{
+                    position: "absolute",
+                    backgroundColor: "orange",
+                    paddingVertical: 32,
+
+                    transform: [{ translateX: this.fifthCardTransX }]
+                  }}
+                >
+                  {renderItem({ item: fifthObj, index: 4 })}
                 </A.View>
               </A.View>
             </A.View>
