@@ -2,7 +2,7 @@ import * as React from "react";
 import { View, Button, StyleSheet, Text, Dimensions } from "react-native";
 import A from "react-native-reanimated";
 const arr = [1, 2, 3, 4];
-const { Value } = A;
+const { Value, add, sub } = A;
 
 const { useState, useEffect } = React;
 const { width, height } = Dimensions.get("window");
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     flexDirection: "row"
   }
 });
-
+// const firstposition =
 export default ({}) => {
   const [firstObj, setFirstObj] = useState(1);
   const [secondObj, setSecondObj] = useState(2);
@@ -72,6 +72,11 @@ export default ({}) => {
     const incrimentStep = currentObj + 1 - 3;
 
     if (currentInView === 2) {
+      // firstX.setValue(100);
+      // secondX.setValue(add(secondX, gap));
+      // thirdX.setValue(add(thirdX, gap));
+      // fourthX.setValue(add(fourthX, gap));
+      // fifthX.setValue(0);
       setFifthObj(incrimentStep);
     }
     if (currentInView === 3) {
