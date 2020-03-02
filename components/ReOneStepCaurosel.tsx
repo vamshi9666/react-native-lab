@@ -46,9 +46,11 @@ const {
   neq
 } = A;
 
-const { width, height } = Dimensions.get("window");
+const { width: w, height } = Dimensions.get("window");
 
-// const width = w / 2;
+const _width = w * 0.7;
+const gutter = 32;
+const width = _width + gutter;
 const P = <T extends any>(android: T, ios: T): T =>
   Platform.OS === "ios" ? ios : android;
 

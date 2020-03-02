@@ -15,7 +15,9 @@ import CloneCaurosel from "./components/CloneCaurousel";
 import VirtualCaurosel from "./components/VirtualCaurosel";
 
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
-const { height, width } = Dimensions.get("window");
+const { height, width: w } = Dimensions.get("window");
+const width = w * 0.7;
+
 const arr = new Array(30).fill(1).map((i, index) => index + 1);
 export default class App extends React.Component {
   // const [modalVisible, setModalVisible] = useState(false);
