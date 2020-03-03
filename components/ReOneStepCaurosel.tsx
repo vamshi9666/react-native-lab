@@ -11,6 +11,8 @@ import {
 import A, { Easing } from "react-native-reanimated";
 import { ReText } from "react-native-redash";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
+import Interactable from "./Interactable";
+import { runDecay } from "./decay";
 
 // Transitioning.
 
@@ -26,6 +28,7 @@ const {
   clockRunning,
   startClock,
   defined,
+  abs,
   concat,
   onChange,
   and,
@@ -47,9 +50,9 @@ const {
 } = A;
 
 const { width: w, height } = Dimensions.get("window");
-const width = w * 0.8;
+const _width = w * 0.8;
 const gutter = 32;
-
+const width = _width + gutter;
 // const width = w / 2;
 const P = <T extends any>(android: T, ios: T): T =>
   Platform.OS === "ios" ? ios : android;
@@ -294,11 +297,22 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
     this.backWardCallbackComplete = new Value(0);
     this.valueToPushLast = new Value(CARD_INDEXES.NONE);
     this.valueToPushFirst = new Value(CARD_INDEXES.NONE);
+    this.activeIndex = new Value(0);
 
     //relocationEvalNodes
 
     this.shouldPushToLast = new Value(0);
     this.shouldPushToFirst = new Value(0);
+
+    //refresh
+
+    this.values = new Array(5).fill(1).map((_, i) => {
+      const numValue = i * width;
+      return {
+        activeX: new Value(numValue),
+        safeX: new Value(numValue)
+      };
+    });
   }
 
   reArrangeData = (initialRender?: boolean, forward?: boolean) => {
@@ -793,155 +807,193 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
       </A.Code>
     );
   };
+
+  renderHandlers = () => {
+    return (
+      <A.Code>
+        {() =>
+          block([
+            cond(
+              or(
+                eq(this.panState, State.ACTIVE),
+                eq(this.panState, State.BEGAN)
+              ),
+              [
+                this.values.map(({ activeX, safeX }) =>
+                  set(activeX, add(safeX, this.dragX))
+                )
+              ]
+            ),
+
+            cond(
+              or(
+                eq(this.panState, State.END),
+                eq(this.panState, State.FAILED),
+                eq(this.panState, State.CANCELLED)
+              ),
+              [
+                cond(lessThan(this.dragX, 0), [
+                  cond(
+                    lessThan(this.dragX, -180),
+                    [
+                      this.values.map(({ activeX, safeX }, index) =>
+                        block([
+                          set(
+                            activeX,
+                            runTiming({
+                              dest: sub(sub(safeX, width), 0),
+                              completeNode:
+                                index === 0 ? new Value(0) : new Value(0),
+                              safeX: safeX,
+                              value: activeX
+                            })
+                          )
+                        ])
+                      )
+                    ],
+                    [
+                      this.values.map(({ activeX, safeX }) =>
+                        set(
+                          activeX,
+                          runTiming({
+                            dest: safeX,
+                            value: activeX,
+                            completeNode: new Value(0),
+                            safeX: safeX
+                          })
+                        )
+                      )
+                    ]
+                  )
+                ]),
+                cond(greaterOrEq(this.dragX, 0), [
+                  cond(lessThan(abs(this.dragX, 180)), [
+                    cond(
+                      and(
+                        lessThan(abs(this.dragX), 200),
+                        greaterThan(this.dragX, 100)
+                      ),
+                      [
+                        this.values.map(({ activeX, safeX }, index) =>
+                          set(
+                            activeX,
+                            runTiming({
+                              dest: add(safeX, width),
+                              value: activeX,
+                              safeX,
+                              completeNode:
+                                index === 0 ? new Value(0) : new Value(0)
+                            })
+                          )
+                        )
+                      ],
+                      [
+                        this.values.map(({ activeX, safeX }) =>
+                          set(
+                            activeX,
+                            runTiming({
+                              dest: safeX,
+                              value: activeX,
+                              completeNode: new Value(0),
+                              safeX: safeX
+                            })
+                          )
+                        )
+                      ]
+                    )
+                  ])
+                ])
+              ]
+            )
+
+            // )
+          ])
+        }
+      </A.Code>
+    );
+  };
+
+  handleCompleteNodes = () => {
+    return (
+      <A.Code>
+        {() =>
+          block([
+            cond(eq(this.forwardComplete, 1), [
+              set(this.forwardComplete, 0),
+              set(
+                this.activeIndex,
+                cond(lessThan(this.activeIndex, 4)),
+                add(this.activeIndex, 1),
+                0
+              )
+            ]),
+            cond(eq(this.backwardComplete, 1), [
+              set(this.backwardComplete, 1),
+              cond(
+                greaterThan(this.activeIndex, 0),
+                sub(this.activeIndex, 1),
+                4
+              )
+            ])
+          ])
+        }
+      </A.Code>
+    );
+  };
   render() {
     const { renderItem } = this.props;
     const { firstObj, secondObj, thirdObj, fourthObj, fifthObj } = this.state;
     const arr = new Array(4);
     return (
       <>
-        {this.renderEventsCode()}
-        {this.renderAnimationsCode()}
-        {this.renderCallbackCode()}
+        {/*{this.renderEventsCode()}
+        {this.renderAnimationsCode()}*/}
+        {this.handleCompleteNodes()}
         {this.renderCardPushingCode()}
-        <View
-          style={{
-            flex: 1,
-            ...StyleSheet.absoluteFillObject
-          }}
-        >
-          <PanGestureHandler
-            onHandlerStateChange={this.gestureEvent}
-            onGestureEvent={this.gestureEvent}
+        {this.renderHandlers()}
+        <View style={{ flex: 1, width: w }}>
+          <ReText text={concat("", this.dragX)} />
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center"
+              // justifyContent: "space-between"
+              // ...StyleSheet.absoluteFillObject,
+            }}
           >
-            <A.View style={{}}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  width,
-                  justifyContent: "space-between"
-                }}
-              >
-                <ReText
-                  text={concat(
-                    "first ",
-                    round(divide(this.firstCardTransX, width))
-                  )}
-                />
-                <ReText
-                  text={concat(
-                    " second ",
-                    round(divide(this.secondCardTransX, width))
-                  )}
-                />
-                <ReText
-                  text={concat(
-                    "third ",
-                    round(divide(this.thirdCardTransX, width))
-                  )}
-                />
-                <ReText
-                  text={concat(
-                    " fourth ",
-                    round(divide(this.fourthCardTransX, width))
-                  )}
-                />
-                <ReText
-                  text={concat(
-                    " fifth ",
-                    round(divide(this.fifthcardTransX, width))
-                  )}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  width,
-                  justifyContent: "space-around"
-                }}
-              >
-                {/*<ReText text={concat("animState is    ", this.animState)} />
-                <ReText
-                  text={concat(
-                    "shouldPushToLast  is    ",
-                    this.shouldPushToLast
-                  )}
-                />*/}
-              </View>
-
-              <Text> {this.state.objToBeUpdatedForLeftSwipe} </Text>
+            {/*// <ReText text={concat("", this.dragX)} />*/}
+            <PanGestureHandler
+              onHandlerStateChange={this.gestureEvent}
+              onGestureEvent={this.gestureEvent}
+            >
               <A.View
                 style={{
-                  height: height * 0.8,
-                  marginTop: 32,
-                  flexDirection: "row",
-                  left: 0,
-                  alignItems: "center",
-                  justifyContent: "flex-start"
+                  flex: 1
                 }}
               >
-                <A.View
-                  style={{
-                    position: "absolute",
-                    backgroundColor: "green",
-                    paddingVertical: 8,
-                    left: 10,
-                    transform: [{ translateX: this.firstCardTransX }]
-                  }}
-                >
-                  {renderItem({ item: firstObj, index: 0 })}
-                </A.View>
-
-                <A.View
-                  style={{
-                    position: "absolute",
-                    paddingVertical: 16,
-                    backgroundColor: "blue",
-                    left: 10,
-
-                    transform: [{ translateX: this.secondCardTransX }]
-                  }}
-                >
-                  {renderItem({ item: secondObj, index: 1 })}
-                </A.View>
-                <A.View
-                  style={{
-                    position: "absolute",
-                    backgroundColor: "pink",
-                    paddingVertical: 24,
-                    left: 10,
-
-                    transform: [{ translateX: this.thirdCardTransX }]
-                  }}
-                >
-                  {renderItem({ item: thirdObj, index: 2 })}
-                </A.View>
-                <A.View
-                  style={{
-                    position: "absolute",
-                    backgroundColor: "orange",
-                    paddingVertical: 32,
-                    left: 10,
-
-                    transform: [{ translateX: this.fourthCardTransX }]
-                  }}
-                >
-                  {renderItem({ item: fourthObj, index: 3 })}
-                </A.View>
-                <A.View
-                  style={{
-                    position: "absolute",
-                    backgroundColor: "#62B6CB",
-                    paddingBottom: 40,
-                    left: 10,
-
-                    transform: [{ translateX: this.fifthcardTransX }]
-                  }}
-                >
-                  {renderItem({ item: fifthObj, index: 0 })}
-                </A.View>
+                {this.values.map(({ safeX, activeX }, index) => {
+                  return (
+                    <A.View
+                      key={index}
+                      style={{
+                        position: "absolute",
+                        width: _width,
+                        left: gutter,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: 200,
+                        transform: [{ translateX: activeX }],
+                        backgroundColor: "green"
+                      }}
+                    >
+                      <Text>{index}</Text>
+                    </A.View>
+                  );
+                })}
               </A.View>
-            </A.View>
-          </PanGestureHandler>
+            </PanGestureHandler>
+          </View>
         </View>
       </>
     );
