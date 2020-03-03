@@ -975,41 +975,34 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
               flex: 1,
               flexDirection: "row",
               alignItems: "center"
-              // justifyContent: "space-between"
-              // ...StyleSheet.absoluteFillObject,
             }}
           >
-            {/*// <ReText text={concat("", this.dragX)} />*/}
-            <PanGestureHandler
-              onHandlerStateChange={this.gestureEvent}
-              onGestureEvent={this.gestureEvent}
+            <Interactable.View
+              horizontalOnly
+              initialPosition={{ x: 0 }}
+              snapPoints={[
+                { x: 0 },
+                { x: (width + gutter) * -1 },
+                { x: 2 * (width + gutter) * -1 },
+                { x: 3 * (width + gutter) * -1 },
+                { x: 4 * (width + gutter) * -1 }
+              ]}
             >
-              <A.View
-                style={{
-                  flex: 1
-                }}
-              >
-                {this.values.map(({ safeX, activeX }, index) => {
+              <View style={{ flexDirection: "row" }}>
+                {[1, 2, 3, 4, 5].map((val, index) => {
                   return (
-                    <A.View
-                      key={index}
+                    <View
                       style={{
-                        position: "absolute",
-                        width: _width,
-                        left: gutter,
-                        justifyContent: "center",
-                        alignItems: "center",
+                        marginHorizontal: gutter,
                         height: 200,
-                        transform: [{ translateX: activeX }],
+                        width: _width,
                         backgroundColor: "green"
                       }}
-                    >
-                      <Text>{index}</Text>
-                    </A.View>
+                    ></View>
                   );
                 })}
-              </A.View>
-            </PanGestureHandler>
+              </View>
+            </Interactable.View>
           </View>
         </View>
       </>
