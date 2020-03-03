@@ -727,13 +727,13 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
               set(this.preventEnd, 0)
             ]),
             cond(eq(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK), [
-              values.map(({ val, safe }) =>
+              this.values.map(({ activeX, safeX }) =>
                 set(
-                  val,
+                  activeX,
                   runTiming({
-                    value: val,
-                    dest: safe,
-                    safeX: safe,
+                    value: activeX,
+                    dest: safeX,
+                    safeX: safeX,
                     completeNode: this.backWardCallbackComplete
                   })
                 )
@@ -814,22 +814,38 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
         {() =>
           block([
             cond(
-              or(
-                eq(this.panState, State.ACTIVE),
-                eq(this.panState, State.BEGAN)
+              and(
+                or(
+                  eq(this.panState, State.ACTIVE),
+                  eq(this.panState, State.BEGAN)
+                ),
+                eq(this.callBackInProgress, 0)
               ),
               [
-                this.values.map(({ activeX, safeX }) =>
-                  set(activeX, add(safeX, this.dragX))
+                cond(
+                  greaterThan(this.dragX, 100),
+                  [
+                    set(this.callBackInProgress, 1),
+                    set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)
+                  ],
+                  [
+                    this.values.map(({ activeX, safeX }) =>
+                      set(activeX, add(safeX, this.dragX))
+                    )
+                  ]
                 )
               ]
             ),
 
             cond(
-              or(
-                eq(this.panState, State.END),
-                eq(this.panState, State.FAILED),
-                eq(this.panState, State.CANCELLED)
+              and(
+                or(
+                  eq(this.panState, State.END),
+                  eq(this.panState, State.FAILED),
+                  eq(this.panState, State.CANCELLED)
+                ),
+                eq(this.preventEnd, 0),
+                eq(this.callBackInProgress, 0)
               ),
               [
                 cond(lessThan(this.dragX, 0), [
@@ -867,41 +883,40 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                   )
                 ]),
                 cond(greaterOrEq(this.dragX, 0), [
-                  cond(lessThan(abs(this.dragX, 180)), [
-                    cond(
-                      and(
-                        lessThan(abs(this.dragX), 200),
-                        greaterThan(this.dragX, 100)
-                      ),
-                      [
-                        this.values.map(({ activeX, safeX }, index) =>
-                          set(
-                            activeX,
-                            runTiming({
-                              dest: add(safeX, width),
-                              value: activeX,
-                              safeX,
-                              completeNode:
-                                index === 0 ? new Value(0) : new Value(0)
-                            })
-                          )
+                  cond(
+                    // and(
+                    greaterThan(this.dragX, 100),
+                    // greaterThan(this.dragX, 100)
+                    // ),
+                    [
+                      // set(this.animState, ANIM_STATES.MOVE_SAFE_WITH_CALLBACK)
+                      this.values.map(({ activeX, safeX }, index) =>
+                        set(
+                          activeX,
+                          runTiming({
+                            dest: sub(safeX, width),
+                            value: activeX,
+                            safeX,
+                            completeNode:
+                              index === 0 ? new Value(0) : new Value(0)
+                          })
                         )
-                      ],
-                      [
-                        this.values.map(({ activeX, safeX }) =>
-                          set(
-                            activeX,
-                            runTiming({
-                              dest: safeX,
-                              value: activeX,
-                              completeNode: new Value(0),
-                              safeX: safeX
-                            })
-                          )
+                      )
+                    ],
+                    [
+                      this.values.map(({ activeX, safeX }) =>
+                        set(
+                          activeX,
+                          runTiming({
+                            dest: safeX,
+                            value: activeX,
+                            completeNode: new Value(0),
+                            safeX: safeX
+                          })
                         )
-                      ]
-                    )
-                  ])
+                      )
+                    ]
+                  )
                 ])
               ]
             )
@@ -927,8 +942,10 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
                 0
               )
             ]),
-            cond(eq(this.backwardComplete, 1), [
-              set(this.backwardComplete, 1),
+            cond(eq(this.backWardCallbackComplete, 1), [
+              set(this.backWardCallbackComplete, 0),
+              set(this.preventEnd, 0),
+              set(this.callBackInProgress, 0),
               cond(
                 greaterThan(this.activeIndex, 0),
                 sub(this.activeIndex, 1),
@@ -946,8 +963,8 @@ class ReOneStepCaurosel extends React.Component<IProps, IState> {
     const arr = new Array(4);
     return (
       <>
-        {/*{this.renderEventsCode()}
-        {this.renderAnimationsCode()}*/}
+        {/*{this.renderEventsCode()}*/}
+        {this.renderAnimationsCode()}
         {this.handleCompleteNodes()}
         {this.renderCardPushingCode()}
         {this.renderHandlers()}
