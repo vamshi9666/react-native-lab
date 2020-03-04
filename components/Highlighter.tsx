@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 
 interface IProps {
-  content: string;
+  layout: any;
 }
 
 interface IState {
@@ -38,50 +38,27 @@ class Highlighter extends React.Component<IProps, IState> {
     });
   };
   render() {
-    const { content } = this.props;
+    const { layout } = this.props;
+    console.log(" layout given is ", layout);
+    if (!layout) {
+      return null;
+    }
     return (
-      <>
-        <Popup visible={this.state.showHighlight} layout={this.state.layout} />
-        <TouchableOpacity
-          style={{
-            margin: 10,
-            backgroundColor: "red",
-            borderRadius: 10,
-            width: 100,
-            height: 100,
-            justifyContent: "center",
-            alignItems: "center"
-          }}
-          onPress={this.open}
-          onLayout={e => {
-            this.setState({
-              layout: e.nativeEvent.layout
-            });
-          }}
-        >
-          <Text>{content}</Text>
-        </TouchableOpacity>
-      </>
+      <View
+        style={{
+          opacity: 1,
+          top: layout.y,
+          left: layout.x - 80,
+          position: "absolute",
+          width: 160,
+          height: 48,
+          zIndex: 200,
+          backgroundColor: "#ededed",
+          borderRadius: 10
+        }}
+      />
     );
   }
 }
 
 export default Highlighter;
-
-const Popup = ({ visible, layout }) => {
-  const opacity = visible ? 1 : 0;
-  return (
-    <View
-      style={{
-        opacity: 1,
-        top: layout.y,
-        right: layout.x,
-        position: "absolute",
-        width: 160,
-        height: 48,
-        backgroundColor: "#ededed",
-        borderRadius: 10
-      }}
-    />
-  );
-};
