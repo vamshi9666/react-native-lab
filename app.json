@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "reanimated-carousel",
-    "slug": "vamshi-reanimated-carousel",
+    "name": "cards-exchange",
+    "slug": "vamshi-reanimated-cards-exchange",
     "privacy": "public",
     "sdkVersion": "36.0.0",
     "platforms": [

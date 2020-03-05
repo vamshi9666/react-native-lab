@@ -13,6 +13,7 @@ import Animated from "react-native-reanimated";
 import ReOneStepCaurosel from "./components/ReOneStepCaurosel";
 import CloneCaurosel from "./components/CloneCaurousel";
 import VirtualCaurosel from "./components/VirtualCaurosel";
+import CardsExchange from "./components/CardsExchange";
 
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
 const { height, width: w } = Dimensions.get("window");
@@ -33,69 +34,7 @@ export default class App extends React.Component {
     return (
       <View style={styles.container}>
         <StatusBar hidden />
-        <ReOneStepCaurosel
-          startIndex={2}
-          data={arr}
-          onItemSnapped={({ newIndex: index, direction, goBack }) => {
-            // console.log(" snapped to ", index, direction);
-            // alert(" snapped to " + index + " " + direction);
-          }}
-          availablePrevCard={1}
-          lazyLoad={true}
-          renderItem={({ item, index: i }) => (
-            <View
-              style={{
-                width: width - 32,
-                height: height * 0.8,
-                marginHorizontal: 16,
-                backgroundColor: "#E6172E",
-                borderRadius: 20,
-                justifyContent: "center",
-                alignItems: "center",
-                ...styles.showdowStyles
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 40,
-                  textAlign: "center"
-                }}
-              >
-                {item}
-              </Text>
-            </View>
-          )}
-          callBack={({
-            oldIndex,
-            newIndex,
-            continue: continueAnimation,
-            renable
-          }) => {
-            Alert.alert(
-              " Go Back ",
-              " Are you sure to go from " +
-                String(oldIndex) +
-                " to " +
-                String(newIndex),
-              [
-                {
-                  text: "yes",
-                  onPress: () => {
-                    continueAnimation();
-                    renable();
-                  }
-                },
-                {
-                  text: "No",
-                  onPress: () => {
-                    alert(" bad luck ");
-                    renable();
-                  }
-                }
-              ]
-            );
-          }}
-        />
+        <CardsExchange />
       </View>
     );
   }
