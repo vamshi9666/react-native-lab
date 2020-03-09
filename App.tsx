@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, Button, Dimensions } from "react-native";
-import ReModal from "./components/ReModal";
+import ReModal, { Effect } from "./components/ReModal";
 import Animated from "react-native-reanimated";
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
 
-const { height } = Dimensions.get("window");
+const { height, width } = Dimensions.get("window");
 export default class App extends React.Component {
   // const [modalVisible, setModalVisible] = useState(false);
   state = {
     modalVisible: false
   };
-  modalVisible = new Value(0);
+  private modalVisible: Animated.Value<any> = new Value(0);
   progress = new Value(0);
   render() {
     const { modalVisible } = this;
@@ -19,35 +19,26 @@ export default class App extends React.Component {
     return (
       <View style={styles.container}>
         <ReModal
-          effect={2}
+          effect={Effect.GEENIE}
           showModal={modalVisible}
           callbackNode={progress}
-          visible={modalVisible}
-        ></ReModal>
+        >
+          <View
+            style={{
+              // flex: 1,
+              width,
+              height,
 
-        {/*<Animated.View
-          pointerEvents={"none"}
-          style={{
-            zIndex: -1,
-            backgroundColor: "#000",
-            ...StyleSheet.absoluteFillObject,
+              // maxHeight,
+              backgroundColor: "green"
+            }}
+          />
+        </ReModal>
 
-            // width: 100,
-            // height: 100,
-            opacity: interpolate(progress, {
-              inputRange: [0, 1],
-              outputRange: [0.8, 0],
-              extrapolate: Extrapolate.CLAMP
-            })
-          }}
-        />*/}
         <Button
           title={"open"}
           onPress={() => {
             this.modalVisible.setValue(cond(eq(this.modalVisible, 1), 2, 1));
-            // alert(" one");
-
-            // this.setState({ modalVisible: !modalVisible });
           }}
         />
       </View>

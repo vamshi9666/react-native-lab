@@ -1,8 +1,9 @@
 import React, { Component } from "react";
 import { StyleSheet, View, Text, Dimensions } from "react-native";
 import Animated, { Easing } from "react-native-reanimated";
-import {} from "react-native-gesture-handler";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 const { height } = Dimensions.get("window");
+import { onGestureEvent } from "react-native-redash";
 const {
   Value,
   cond,
@@ -12,10 +13,12 @@ const {
   set,
   timing,
   Clock,
+
   clockRunning,
   startClock,
   stopClock,
   block,
+
   interpolate,
   Extrapolate
 } = Animated;
@@ -26,7 +29,12 @@ interface runTimingProps {
   dest: number;
   oppositeClock: Animated.Clock;
 }
-function runTiming({ clock, value, dest, oppositeClock }: runTimingProps) {
+function runTiming({
+  clock,
+  value,
+  dest
+  // oppositeClock
+}) {
   // const clock = new Clock();
   const state = {
     finished: new Value(0),
@@ -36,14 +44,14 @@ function runTiming({ clock, value, dest, oppositeClock }: runTimingProps) {
   };
 
   const config = {
-    duration: 350,
+    duration: 300,
 
     toValue: new Value(0),
     easing: Easing.inOut(Easing.ease)
   };
 
   return block([
-    cond(clockRunning(oppositeClock), stopClock(oppositeClock), 0),
+    // cond(clockRunning(oppositeClock), stopClock(oppositeClock), 0),
     cond(
       clockRunning(clock),
       [set(config.toValue, dest)],
@@ -62,17 +70,17 @@ function runTiming({ clock, value, dest, oppositeClock }: runTimingProps) {
   ]);
 }
 
-enum Effect {
+export enum Effect {
   SLIDE_FROM_BOTTOM = 1,
   SLIDE_FROM_TOP = 2,
   SLIDE_FROM_LEFT = 3,
-  SLIDE_FROM_RIGHT = 4
+  SLIDE_FROM_RIGHT = 4,
+  GEENIE = 5
 }
 interface IProps {
-  visible: Boolean;
-  callbackNode: Animated.Adaptable<Number>;
+  callbackNode: Animated.Adaptable<any>;
   fromDirection?: String;
-  showModal: Animated.Adaptable<Number>;
+  showModal: Animated.Adaptable<any>;
   effect: Effect;
 }
 interface IState {}
@@ -80,43 +88,47 @@ class ReanimatedModal extends Component<IProps, IState> {
   constructor(props) {
     super(props);
     this.state = {};
-    this.modalTranslateY = new Value(height);
+    this.modalTranslateY = new Value(0);
+
+    this.panState = new Value(State.UNDETERMINED);
+    this.dragY = new Value(0);
     this.progress = new Value(0);
     this.shadowOpacity = new Value(0);
-    this.fromCoordinate = new Value();
+    this.fromCoordinate = new Value(0);
+    this.scaleX = new Value();
     // this.toCoordinate = new Value();
     this.toCoordinate = new Value(0);
-    if (props.effect === 1) {
+    if (props.effect === Effect.SLIDE_FROM_BOTTOM) {
       this.fromCoordinate = new Value(height);
       this.modalTranslateY = new Value(height);
-    } else if (props.effect === 2) {
+    } else if (props.effect === Effect.SLIDE_FROM_TOP) {
       this.fromCoordinate = new Value(-height);
       this.modalTranslateY = new Value(-height);
       // this.toCoordinate = new Value(0);
+    } else if (props.effect === Effect.GEENIE) {
+      this.fromCoordinate = new Value(height);
+      this.toCoordinate = new Value(0);
+      this.modalTranslateY = new Value(height);
+      this.fromScaleX = new Value(0);
+      this.toScaleX = new Value(1);
     }
 
     this.clock = new Clock();
+
+    this.gesureHandler = onGestureEvent({
+      translationY: this.modalTranslateY,
+      state: this.panState
+    });
   }
 
   render() {
-    const { showModal, effect } = this.props;
+    const { showModal, effect, children } = this.props;
+    const shouldUpdateScale = effect === Effect.GEENIE;
     return (
       <>
         <Animated.Code>
           {() =>
             block([
-              // debug("callback node is ", showModal),
-              // onChange(
-              // this.modalTranslateY,
-              set(
-                this.props.callbackNode,
-                interpolate(this.modalTranslateY, {
-                  inputRange: [this.fromCoordinate, this.toCoordinate],
-                  outputRange: [1, 0],
-                  expextrapolate: Extrapolate.CLAMP
-                })
-                // )
-              ),
               set(
                 this.shadowOpacity,
                 interpolate(this.modalTranslateY, {
@@ -124,12 +136,12 @@ class ReanimatedModal extends Component<IProps, IState> {
                   outputRange: [0, 1],
                   expextrapolate: Extrapolate.CLAMP
                 })
-                // )
               ),
               cond(eq(showModal, 1), [
                 set(
                   this.modalTranslateY,
                   runTiming({
+                    oppositeClock: new Clock(),
                     clock: this.clock,
                     value: this.modalTranslateY,
                     dest: this.toCoordinate
@@ -150,41 +162,40 @@ class ReanimatedModal extends Component<IProps, IState> {
           }
         </Animated.Code>
         <Animated.View
+          pointerEvents={"none"}
           style={{
             ...StyleSheet.absoluteFillObject,
             backgroundColor: "#000",
             opacity: this.shadowOpacity
           }}
         />
-
-        <Animated.View
-          style={{
-            ...styles.container,
-            transform: [
-              { translateY: this.modalTranslateY }
-              // {
-              //   translateY: this.fromCoordinate
-              // }
-            ]
-          }}
-        ></Animated.View>
+        <PanGestureHandler {...this.gesureHandler}>
+          <Animated.View
+            style={{
+              flex: 1,
+              // ...styles.container,
+              transform: [
+                { translateY: this.modalTranslateY },
+                {
+                  scaleX: shouldUpdateScale
+                    ? interpolate(this.modalTranslateY, {
+                        inputRange: [this.fromCoordinate, this.toCoordinate],
+                        outputRange: [0, 1]
+                      })
+                    : 1
+                }
+              ]
+            }}
+          >
+            {children}
+          </Animated.View>
+        </PanGestureHandler>
       </>
     );
   }
 }
 
 export default ReanimatedModal;
-
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
-    marginHorizontal: 32,
-    flex: 1,
-    marginVertical: 100,
-    // height: 300,
-    backgroundColor: "red"
-  }
-});
 
 const PRIMATY_COLOR = "#101935";
 const SECONDARY_COLOR = "#dbcbd8";
