@@ -4,6 +4,9 @@ import ReModal, { Effect } from "./components/ReModal";
 import Animated from "react-native-reanimated";
 const { Value, Extrapolate, block, eq, debug, cond, interpolate } = Animated;
 
+const PRIMATY_COLOR = "#101935";
+const SECONDARY_COLOR = "#dbcbd8";
+
 const { height, width } = Dimensions.get("window");
 export default class App extends React.Component {
   // const [modalVisible, setModalVisible] = useState(false);
@@ -30,7 +33,7 @@ export default class App extends React.Component {
               height,
 
               // maxHeight,
-              backgroundColor: "green"
+              backgroundColor: SECONDARY_COLOR
             }}
           />
         </ReModal>

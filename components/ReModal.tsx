@@ -13,7 +13,6 @@ const {
   set,
   timing,
   Clock,
-
   clockRunning,
   startClock,
   stopClock,
@@ -85,45 +84,43 @@ interface IProps {
 }
 interface IState {}
 class ReanimatedModal extends Component<IProps, IState> {
+  private modalTranslateY: Animated.Value<number> = new Value(0);
+
+  private panState: Animated.Value<number> = new Value(State.UNDETERMINED);
+  private dragY: Animated.Value<number> = new Value(0);
+  private progress: Animated.Value<number> = new Value(0);
+  private shadowOpacity: Animated.Value<number> = new Value(0);
+  private fromCoordinate: Animated.Value<number> = new Value(0);
+  private scaleX: Animated.Value<number> = new Value();
+  private toCoordinate: Animated.Value<number> = new Value(0);
+  private from;
+  private clock: any = new Clock();
   constructor(props) {
     super(props);
-    this.state = {};
-    this.modalTranslateY = new Value(0);
 
-    this.panState = new Value(State.UNDETERMINED);
-    this.dragY = new Value(0);
-    this.progress = new Value(0);
-    this.shadowOpacity = new Value(0);
-    this.fromCoordinate = new Value(0);
-    this.scaleX = new Value();
-    // this.toCoordinate = new Value();
-    this.toCoordinate = new Value(0);
     if (props.effect === Effect.SLIDE_FROM_BOTTOM) {
-      this.fromCoordinate = new Value(height);
-      this.modalTranslateY = new Value(height);
+      this.fromCoordinate.setValue(height);
+      this.modalTranslateY.setValue(height);
     } else if (props.effect === Effect.SLIDE_FROM_TOP) {
-      this.fromCoordinate = new Value(-height);
-      this.modalTranslateY = new Value(-height);
-      // this.toCoordinate = new Value(0);
+      this.fromCoordinate.setValue(-height);
+      this.modalTranslateY.setValue(-height);
+      // this.toCoordinate .setValue(0);
     } else if (props.effect === Effect.GEENIE) {
-      this.fromCoordinate = new Value(height);
-      this.toCoordinate = new Value(0);
-      this.modalTranslateY = new Value(height);
-      this.fromScaleX = new Value(0);
-      this.toScaleX = new Value(1);
+      this.fromCoordinate.setValue(height);
+      this.toCoordinate.setValue(0);
+      this.modalTranslateY.setValue(height);
+      this.fromScaleX.setValue(0);
+      this.toScaleX.setValue(1);
     }
-
-    this.clock = new Clock();
-
-    this.gesureHandler = onGestureEvent({
-      translationY: this.modalTranslateY,
-      state: this.panState
-    });
   }
 
   render() {
     const { showModal, effect, children } = this.props;
     const shouldUpdateScale = effect === Effect.GEENIE;
+    const gestureHandler = onGestureEvent({
+      translationY: this.modalTranslateY,
+      state: this.panState
+    });
     return (
       <>
         <Animated.Code>
@@ -134,14 +131,13 @@ class ReanimatedModal extends Component<IProps, IState> {
                 interpolate(this.modalTranslateY, {
                   inputRange: [this.fromCoordinate, this.toCoordinate],
                   outputRange: [0, 1],
-                  expextrapolate: Extrapolate.CLAMP
+                  extrapolate: Extrapolate.CLAMP
                 })
               ),
               cond(eq(showModal, 1), [
                 set(
                   this.modalTranslateY,
                   runTiming({
-                    oppositeClock: new Clock(),
                     clock: this.clock,
                     value: this.modalTranslateY,
                     dest: this.toCoordinate
@@ -169,19 +165,19 @@ class ReanimatedModal extends Component<IProps, IState> {
             opacity: this.shadowOpacity
           }}
         />
-        <PanGestureHandler {...this.gesureHandler}>
+        <PanGestureHandler enabled={false} {...gestureHandler}>
           <Animated.View
             style={{
               flex: 1,
               // ...styles.container,
               transform: [
-                { translateY: this.modalTranslateY },
+                { translateY: this.modalTranslateY as any },
                 {
                   scaleX: shouldUpdateScale
-                    ? interpolate(this.modalTranslateY, {
+                    ? (interpolate(this.modalTranslateY, {
                         inputRange: [this.fromCoordinate, this.toCoordinate],
-                        outputRange: [0, 1]
-                      })
+                        outputRange: [0.4, 1]
+                      }) as any)
                     : 1
                 }
               ]
@@ -196,6 +192,3 @@ class ReanimatedModal extends Component<IProps, IState> {
 }
 
 export default ReanimatedModal;
-
-const PRIMATY_COLOR = "#101935";
-const SECONDARY_COLOR = "#dbcbd8";
