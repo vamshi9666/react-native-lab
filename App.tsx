@@ -30,7 +30,7 @@ export default class App extends React.Component {
               height,
 
               // maxHeight,
-              backgroundColor: "green"
+              backgroundColor: "orange"
             }}
           />
         </ReModal>
